@@ -4,17 +4,24 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}DeepWebMonitor{% endblock %} · {{ settings.company_name }}</title>
+  <link rel="preload" href="{{ url_for('static', path='fonts/poppins-400.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <header class="topbar no-print">
-    <a class="brand" href="/">
-      {% if settings.company_logo %}<img src="{{ url_for('static', path=settings.company_logo) }}" alt="">{% endif %}
-      <span>{{ settings.company_name }}</span><small>DeepWebMonitor</small>
-    </a>
+    <div class="topbar-inner">
+      <a class="brand" href="/">
+        <img src="{{ url_for('static', path=settings.company_logo) }}" alt="{{ settings.company_name }}">
+        <span class="product">DeepWebMonitor</span>
+      </a>
+      <nav class="nav">
+        <a href="/" class="{{ 'active' if active_nav == 'clientes' }}">Clientes</a>
+        <a href="/senhas" class="{{ 'active' if active_nav == 'senhas' }}">Verificar senha</a>
+      </nav>
+    </div>
   </header>
   <main class="container">
-    {% if msg %}<div class="flash">{{ msg }}</div>{% endif %}
+    {% if msg %}<div class="flash no-print">{{ msg }}</div>{% endif %}
     {% block content %}{% endblock %}
   </main>
 </body>

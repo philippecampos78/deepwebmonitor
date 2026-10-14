@@ -29,6 +29,17 @@ CATEGORY_LABELS = {
     "dominio_similar": "Domínios e certificados parecidos (possível phishing)",
 }
 
+# Títulos das seções do relatório no padrão da proposta: (parte branca, parte azul)
+CATEGORY_TITLES = {
+    "ransomware": ("Sites de", "ransomware"),
+    "infostealer": ("Credenciais em", "infostealer"),
+    "vazamento": ("Contas em", "vazamentos"),
+    "dark_web": ("Menções na", "dark web"),
+    "codigo_exposto": ("Código", "exposto"),
+    "ioc": ("Indicadores de", "ameaça"),
+    "incidente_proprio": ("Incidentes do", "próprio domínio"),
+    "dominio_similar": ("Domínios", "parecidos"),
+}
 
 class Client(Base):
     __tablename__ = "clients"

@@ -198,3 +198,15 @@ def test_crtsh_ignores_other_client_domains():
         {"id": 1, "name_value": "auth.empresa.cn\nempresa-login.com", "not_before": recent}])}), days=30)
     c.client_domains = {"empresa.com.br", "empresa.cn"}
     assert [f.title.split(": ")[1] for f in c.collect_domain("empresa.com.br")] == ["empresa-login.com"]
+
+
+def test_pwned_count_k_anonymity():
+    import hashlib
+    from app.pwned import pwned_count
+    digest = hashlib.sha1(b"Senha@123").hexdigest().upper()
+    seen = []
+    http = http_for({"https://api.pwnedpasswords.com/range/": (200, f"00000AAA:1\n{digest[5:]}:156842\n")}, seen)
+    assert pwned_count(http, "Senha@123") == 156842
+    assert str(seen[0].url).endswith("/" + digest[:5])  # só o prefixo sai do servidor
+    assert "Senha@123" not in str(seen[0].url) and seen[0].headers["Add-Padding"] == "true"
+    assert pwned_count(http, "outra-senha") == 0

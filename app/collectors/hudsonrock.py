@@ -6,6 +6,7 @@ devolve (já mascaradas) não são gravadas.
 """
 
 from .base import Collector, FindingData
+from .matching import ensure_masked
 
 API = "https://cavalier.hudsonrock.com/api/json/v2/osint-tools"
 SITE = "https://www.hudsonrock.com/free-tools"
@@ -115,6 +116,12 @@ class HudsonRockCollector(Collector):
             av = s.get("antiviruses")
             if av and _filled(av):
                 parts.append("Antivírus: " + (", ".join(a for a in av if _filled(a)) if isinstance(av, list) else str(av)))
+            passwords = [ensure_masked(p) for p in s.get("top_passwords") or [] if _filled(p)]
+            if passwords:
+                parts.append("Senhas encontradas no computador (mascaradas): " + ", ".join(passwords[:5]))
+            logins = [ensure_masked(u) for u in s.get("top_logins") or [] if _filled(u)]
+            if logins:
+                parts.append("Logins encontrados (mascarados): " + ", ".join(logins[:5]))
             if s.get("total_corporate_services") is not None:
                 parts.append(f"Serviços corporativos com credencial roubada: {s['total_corporate_services']}")
             if s.get("total_user_services") is not None:

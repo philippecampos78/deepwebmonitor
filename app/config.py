@@ -20,8 +20,11 @@ def _bool(value: str | None, default: bool) -> bool:
 class Settings:
     app_user: str = os.getenv("APP_USER", "soc")
     app_password: str = os.getenv("APP_PASSWORD", "")
-    company_name: str = os.getenv("COMPANY_NAME", "SOC")
-    company_logo: str = os.getenv("COMPANY_LOGO", "")
+    company_name: str = os.getenv("COMPANY_NAME", "UXGUARD")
+    company_logo: str = os.getenv("COMPANY_LOGO", "") or "img/logo-uxguard.png"
+    company_footer: str = os.getenv("COMPANY_FOOTER", "UXGUARD LTDA · CNPJ 57.270.568/0001-40")
+    company_address: str = os.getenv(
+        "COMPANY_ADDRESS", "Rua dos Guajajaras, 1570 · Sala 502 · Belo Horizonte/MG · CEP 30.180-099")
     hibp_api_key: str = os.getenv("HIBP_API_KEY", "")
     hibp_user_agent: str = os.getenv("HIBP_USER_AGENT", "DeepWebMonitor-SOC")
     dnstwist_enabled: bool = _bool(os.getenv("DNSTWIST_ENABLED"), True)

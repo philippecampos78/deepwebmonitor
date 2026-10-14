@@ -41,3 +41,18 @@ def first_value(record: dict, *keys) -> str:
         if val:
             return str(val)
     return ""
+
+
+def mask_secret(secret: str) -> str:
+    """Mantém só os 2 primeiros caracteres: suficiente para o cliente reconhecer a senha,
+    inútil para quem tentar usá-la."""
+    secret = str(secret).strip()
+    if secret.startswith("-----BEGIN"):
+        return secret
+    return (secret[:2] + "*" * min(max(len(secret) - 2, 4), 12)) if secret else ""
+
+
+def ensure_masked(value: str) -> str:
+    """Valores que a fonte já entrega mascarados (com *) passam; os demais são mascarados aqui."""
+    value = str(value).strip()
+    return value if "*" in value else mask_secret(value)

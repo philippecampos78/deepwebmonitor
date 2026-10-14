@@ -17,6 +17,7 @@ from pathlib import Path
 
 from ..config import settings
 from .base import Collector, CollectorError, FindingData
+from .matching import mask_secret as mask
 
 API = "https://api.github.com"
 MAX_FILES = 20
@@ -33,13 +34,6 @@ BUILTIN_RULES = [
      re.compile(r"(?i)\b[\w.-]*(?:pass(?:word)?|passwd|pwd|senha|secret|api[_-]?key|access[_-]?token)"
                 r"[\w-]*[\"']?\s*[:=]\s*[\"']([^\"'\s]{6,})[\"']")),
 ]
-
-
-def mask(secret: str) -> str:
-    secret = secret.strip()
-    if secret.startswith("-----BEGIN"):
-        return secret
-    return (secret[:2] + "*" * min(max(len(secret) - 2, 4), 12)) if secret else ""
 
 
 def builtin_scan(text: str) -> list[dict]:

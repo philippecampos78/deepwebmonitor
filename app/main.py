@@ -18,6 +18,8 @@ from . import db as dbmod
 from .collectors import COLLECTOR_CLASSES
 from .config import settings
 from .models import CATEGORY_LABELS, SEVERITIES, SEVERITY_LABELS, Client, Domain, MonitoredEmail, ScanRun
+from .collectors import make_http_client
+from .pwned import PwnedCheckError, pwned_count
 from .reports import build_report
 from .scanner import run_scan
 
@@ -229,10 +231,34 @@ def start_scan(client_id: int, background: BackgroundTasks, db: Session = Depend
 
 
 @app.get("/clients/{client_id}/report", response_class=HTMLResponse)
-def report(request: Request, client_id: int, dias: int = 30, db: Session = Depends(get_db)):
+def report(request: Request, client_id: int, dias: int = 30, tema: str = "", db: Session = Depends(get_db)):
     client = get_client(db, client_id)
     ctx = build_report(client, max(1, min(dias, 3650)))
+    ctx["light"] = tema == "claro"
     return templates.TemplateResponse(request, "report.html", ctx)
+
+
+def _no_store(response):
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.get("/senhas", response_class=HTMLResponse)
+def senhas_form(request: Request):
+    return _no_store(templates.TemplateResponse(request, "senhas.html", {"count": None, "error": ""}))
+
+
+@app.post("/senhas", response_class=HTMLResponse)
+def senhas_check(request: Request, senha: str = Form(...)):
+    count, error = None, ""
+    try:
+        with make_http_client() as http:
+            count = pwned_count(http, senha)
+    except PwnedCheckError as exc:
+        error = str(exc)
+    finally:
+        del senha
+    return _no_store(templates.TemplateResponse(request, "senhas.html", {"count": count, "error": error}))
 
 
 @app.get("/health")

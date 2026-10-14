@@ -1,13 +1,30 @@
 {% extends "base.html" %}
+{% set active_nav = "clientes" %}
 {% block title %}Clientes{% endblock %}
 {% block content %}
-<h1>Clientes monitorados</h1>
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Monitoramento de exposição digital</div>
+    <h1 style="margin-top:.5rem">Clientes <span class="hl">monitorados</span></h1>
+    <div class="bar"></div>
+  </div>
+</div>
 
-<section class="card">
+{% set total_crit = rows | sum(attribute='sev.critica') %}
+{% set total_alta = rows | sum(attribute='sev.alta') %}
+<div class="stats">
+  <div class="stat"><strong>{{ rows | length }}</strong><span>clientes</span></div>
+  <div class="stat"><strong>{{ rows | sum(attribute='total') }}</strong><span>achados no total</span></div>
+  <div class="stat sev-critica"><strong>{{ total_crit }}</strong><span>críticos</span></div>
+  <div class="stat sev-alta"><strong>{{ total_alta }}</strong><span>altos</span></div>
+</div>
+
+<section class="card card-scroll">
+  <span class="eyebrow">Carteira</span>
   {% if rows %}
   <table>
     <thead>
-      <tr><th>Cliente</th><th>Domínios</th><th>E-mails</th>
+      <tr><th>Cliente</th><th>Domínios</th><th class="num">E-mails</th>
         {% for s in severities[:4] %}<th class="num">{{ SEVERITY_LABELS[s] }}</th>{% endfor %}
         <th>Última varredura</th><th></th></tr>
     </thead>
@@ -18,21 +35,21 @@
         <td>{{ r.client.domains | map(attribute='name') | join(', ') or '—' }}</td>
         <td class="num">{{ r.client.emails | length }}</td>
         {% for s in severities[:4] %}
-          <td class="num">{% if r.sev[s] %}<span class="badge sev-{{ s }}">{{ r.sev[s] }}</span>{% else %}0{% endif %}</td>
+          <td class="num">{% if r.sev[s] %}<span class="badge count sev-{{ s }}">{{ r.sev[s] }}</span>{% else %}<span class="muted">0</span>{% endif %}</td>
         {% endfor %}
-        <td>{% if r.last_scan %}{{ r.last_scan.started_at | dt }} <span class="muted">({{ r.last_scan.status }})</span>{% else %}<span class="muted">nunca</span>{% endif %}</td>
-        <td><a class="btn small" href="/clients/{{ r.client.id }}/report">Relatório</a></td>
+        <td>{% if r.last_scan %}{{ r.last_scan.started_at | dt }}<div class="detail">{{ r.last_scan.status }}</div>{% else %}<span class="muted">nunca</span>{% endif %}</td>
+        <td><a class="btn small secondary" href="/clients/{{ r.client.id }}/report">Relatório</a></td>
       </tr>
     {% endfor %}
     </tbody>
   </table>
   {% else %}
-  <p class="muted">Nenhum cliente cadastrado ainda.</p>
+  <p class="muted">Nenhum cliente cadastrado ainda. Cadastre o primeiro abaixo.</p>
   {% endif %}
 </section>
 
 <section class="card">
-  <h2>Novo cliente</h2>
+  <span class="eyebrow">Novo cliente</span>
   <form method="post" action="/clients" class="row">
     <input name="name" placeholder="Nome do cliente" required>
     <input name="notes" placeholder="Observações (opcional)">
@@ -41,13 +58,13 @@
 </section>
 
 <section class="card">
-  <h2>Fontes</h2>
+  <span class="eyebrow">Fontes de inteligência</span>
   <ul class="sources">
   {% for c in collectors %}
-    <li><span class="dot {{ 'on' if c.enabled else 'off' }}"></span>
-      <strong>{{ c.label }}</strong> — {{ c.description }}
-      {% if not c.enabled %}<span class="muted">({{ c.reason }})</span>
-      {% elif c.note %}<span class="muted">({{ c.note }})</span>{% endif %}</li>
+    <li><span class="dot {{ 'on' if c.enabled else 'off' }}"></span><strong>{{ c.label }}</strong>
+      <span class="muted">{{ c.description }}</span>
+      {% if not c.enabled %}<div class="detail">Desativada: {{ c.reason }}</div>
+      {% elif c.note %}<div class="detail">{{ c.note }}</div>{% endif %}</li>
   {% endfor %}
   </ul>
 </section>

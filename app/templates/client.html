@@ -1,9 +1,15 @@
 {% extends "base.html" %}
+{% set active_nav = "clientes" %}
 {% block title %}{{ client.name }}{% endblock %}
 {% block content %}
-<p><a href="/">← Clientes</a></p>
-<div class="title-row">
-  <h1>{{ client.name }}</h1>
+<a class="back" href="/">← Clientes</a>
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Cliente monitorado</div>
+    <h1 style="margin-top:.5rem">{{ client.name }}</h1>
+    {% if client.notes %}<div class="muted" style="margin-top:.3rem">{{ client.notes }}</div>{% endif %}
+    <div class="bar"></div>
+  </div>
   <div class="actions">
     <form method="post" action="/clients/{{ client.id }}/scan">
       <button class="btn" {% if running %}disabled{% endif %}>{{ 'Varredura em andamento…' if running else 'Executar varredura' }}</button>
@@ -11,17 +17,23 @@
     <a class="btn secondary" href="/clients/{{ client.id }}/report">Gerar relatório</a>
   </div>
 </div>
-{% if client.notes %}<p class="muted">{{ client.notes }}</p>{% endif %}
+
+<div class="stats">
+  <div class="stat"><strong>{{ findings | length }}</strong><span>achados</span></div>
+  {% for s in ['critica', 'alta', 'media', 'baixa'] %}
+  <div class="stat sev-{{ s }}"><strong>{{ findings | selectattr('severity', 'equalto', s) | list | length }}</strong><span>{{ SEVERITY_LABELS[s] }}</span></div>
+  {% endfor %}
+</div>
 
 <div class="grid2">
   <section class="card">
-    <h2>Domínios</h2>
+    <span class="eyebrow">Domínios</span>
     <ul class="list">
       {% for d in client.domains %}
       <li>{{ d.name }}
         <form method="post" action="/clients/{{ client.id }}/domains/{{ d.id }}/delete" class="inline">
-          <button class="link danger" title="Remover">remover</button></form></li>
-      {% else %}<li class="muted">Nenhum domínio.</li>{% endfor %}
+          <button class="link danger">remover</button></form></li>
+      {% else %}<li class="muted">Nenhum domínio cadastrado.</li>{% endfor %}
     </ul>
     <form method="post" action="/clients/{{ client.id }}/domains" class="row">
       <input name="name" placeholder="empresa.com.br" required>
@@ -30,14 +42,13 @@
   </section>
 
   <section class="card">
-    <h2>E-mails monitorados</h2>
-    <p class="muted">Contas importantes (diretoria, TI, financeiro). Consultadas uma a uma.</p>
+    <span class="eyebrow">E-mails prioritários</span>
     <ul class="list">
       {% for e in client.emails %}
       <li>{{ e.address }}
         <form method="post" action="/clients/{{ client.id }}/emails/{{ e.id }}/delete" class="inline">
           <button class="link danger">remover</button></form></li>
-      {% else %}<li class="muted">Nenhum e-mail.</li>{% endfor %}
+      {% else %}<li class="muted">Diretoria, TI, financeiro: consultados um a um.</li>{% endfor %}
     </ul>
     <form method="post" action="/clients/{{ client.id }}/emails" class="row">
       <textarea name="addresses" rows="2" placeholder="um ou mais e-mails, separados por vírgula ou linha" required></textarea>
@@ -46,8 +57,8 @@
   </section>
 </div>
 
-<section class="card">
-  <h2>Achados ({{ findings | length }})</h2>
+<section class="card card-scroll">
+  <span class="eyebrow">Achados</span>
   {% if findings %}
   <table>
     <thead><tr><th>Gravidade</th><th>Categoria</th><th>Achado</th><th>Data do evento</th><th>Visto pela 1ª vez</th></tr></thead>
@@ -57,7 +68,7 @@
         <td><span class="badge sev-{{ f.severity }}">{{ f.severity_label }}</span></td>
         <td>{{ f.category_label }}</td>
         <td><strong>{{ f.title }}</strong><div class="detail">{{ f.detail }}</div>
-          {% if f.reference_url | is_http %}<a class="muted" href="{{ f.reference_url }}" target="_blank" rel="noopener noreferrer">fonte</a>{% endif %}</td>
+          {% if f.reference_url | is_http %}<a class="detail" href="{{ f.reference_url }}" target="_blank" rel="noopener noreferrer">ver na fonte ↗</a>{% endif %}</td>
         <td class="nowrap">{{ f.event_date or '—' }}</td>
         <td class="nowrap">{{ f.first_seen | dt }}</td>
       </tr>
@@ -65,25 +76,23 @@
     </tbody>
   </table>
   {% else %}
-  <p class="muted">Nenhum achado. Cadastre domínios/e-mails e execute uma varredura.</p>
+  <p class="muted">Nenhum achado. Cadastre domínios ou e-mails e execute uma varredura.</p>
   {% endif %}
 </section>
 
 <section class="card">
-  <h2>Histórico de varreduras</h2>
+  <span class="eyebrow">Histórico de varreduras</span>
   {% for s in scans %}
   <details>
-    <summary>{{ s.started_at | dt }} — {{ s.status }} — {{ s.new_findings }} novo(s)</summary>
+    <summary>{{ s.started_at | dt }} · {{ s.status }} · {{ s.new_findings }} novo(s)</summary>
     <pre>{{ s.log or 'Sem registros ainda.' }}</pre>
   </details>
-  {% else %}<p class="muted">Nenhuma varredura.</p>{% endfor %}
+  {% else %}<p class="muted">Nenhuma varredura ainda.</p>{% endfor %}
 </section>
 
-<section class="card danger-zone">
-  <form method="post" action="/clients/{{ client.id }}/delete"
-        onsubmit='return confirm({{ ("Excluir " ~ client.name ~ " e todos os achados?") | tojson }});'>
-    <button class="link danger">Excluir cliente</button>
-  </form>
-</section>
+<form method="post" action="/clients/{{ client.id }}/delete"
+      onsubmit='return confirm({{ ("Excluir " ~ client.name ~ " e todos os achados?") | tojson }});'>
+  <button class="link danger">Excluir cliente</button>
+</form>
 {% if running %}<script>setTimeout(() => location.reload(), 15000);</script>{% endif %}
 {% endblock %}

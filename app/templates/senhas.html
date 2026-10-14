@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% set active_nav = "senhas" %}
+{% block title %}Verificar senha{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Conferência com o cliente</div>
+    <h1 style="margin-top:.5rem">Verificar <span class="hl">senha</span></h1>
+    <div class="bar"></div>
+  </div>
+</div>
+
+<div class="grid2">
+  <section class="card">
+    <span class="eyebrow">A senha já vazou?</span>
+    <p>Digite uma senha para saber se ela aparece em vazamentos públicos. Use com o cliente para
+      confirmar se a senha de uma conta exposta é a atual, ou para validar uma senha nova antes de adotá-la.</p>
+    <form method="post" action="/senhas" autocomplete="off">
+      <div class="row">
+        <input type="password" name="senha" placeholder="Senha a verificar" required autocomplete="new-password"
+               autofocus spellcheck="false">
+        <button class="btn">Verificar</button>
+      </div>
+    </form>
+    {% if error %}<div class="result bad"><strong>Erro na consulta</strong>{{ error }}</div>
+    {% elif count is not none %}
+      {% if count %}
+      <div class="result bad"><strong>Senha vazada</strong>
+        Encontrada <b>{{ "{:,}".format(count).replace(",", ".") }}</b> vez(es) em vazamentos. Não deve ser usada:
+        troque-a em todos os serviços onde foi utilizada.</div>
+      {% else %}
+      <div class="result good"><strong>Não encontrada</strong>
+        Esta senha não aparece nos vazamentos conhecidos. Isso não garante que seja forte: prefira frases longas e únicas.</div>
+      {% endif %}
+    {% endif %}
+  </section>
+
+  <section class="card hi">
+    <span class="eyebrow">Como a senha é protegida</span>
+    <ul class="list plain">
+      <li>A senha não é gravada, não aparece em logs e não é mostrada de volta.</li>
+      <li>Só os 5 primeiros caracteres do hash SHA-1 são enviados ao HIBP (k-anonimato); a comparação é feita aqui.</li>
+      <li>Para relatórios, as senhas das fontes aparecem apenas mascaradas (ex.: <span class="secret">ab*******</span>).</li>
+    </ul>
+  </section>
+</div>
+{% endblock %}

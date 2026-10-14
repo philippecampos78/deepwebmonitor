@@ -1,77 +1,104 @@
 {% extends "base.html" %}
+{% set active_nav = "clientes" %}
 {% block title %}Relatório — {{ client.name }}{% endblock %}
-{% block body_class %}report-page{% endblock %}
+{% block body_class %}report-page{% if light %} theme-light{% endif %}{% endblock %}
 {% block content %}
 <div class="no-print report-toolbar">
   <a href="/clients/{{ client.id }}">← Voltar</a>
-  <form method="get" class="inline">
-    Destacar como novos os achados dos últimos
-    <input type="number" name="dias" value="{{ days }}" min="1" max="3650" class="tiny"> dias
+  <form method="get" class="inline actions">
+    <span>Destacar como novos os achados dos últimos</span>
+    <input type="number" name="dias" value="{{ days }}" min="1" max="3650" class="tiny"> <span>dias</span>
+    {% if light %}<input type="hidden" name="tema" value="claro">{% endif %}
     <button class="btn small secondary">Atualizar</button>
   </form>
+  <span class="spacer"></span>
+  <a class="btn small secondary" href="?dias={{ days }}{{ '' if light else '&tema=claro' }}">{{ 'Versão escura' if light else 'Versão clara (impressão)' }}</a>
   <button class="btn" onclick="window.print()">Imprimir / Salvar em PDF</button>
 </div>
 
 <article class="report">
-  <header class="report-header">
+  <header class="report-cover">
     <div>
-      {% if settings.company_logo %}<img class="report-logo" src="{{ url_for('static', path=settings.company_logo) }}" alt="">{% endif %}
-      <div class="report-company">{{ settings.company_name }}</div>
+      <img class="logo" src="{{ url_for('static', path=settings.company_logo) }}" alt="{{ settings.company_name }}">
+      <div class="eyebrow">Segurança da informação · Monitoramento de exposição digital</div>
+      <h1>Relatório de<br><span class="hl">exposição digital</span></h1>
+      <div class="bar"></div>
+      <p class="lead">Credenciais vazadas, menções em fóruns e sites de ransomware, código exposto e domínios
+        falsos: o que está visível sobre a empresa do lado de fora do perímetro.</p>
+      <div class="pills">
+        <span class="pill">Emitido em {{ generated_at | dt }}</span>
+        <span class="pill">Novos: últimos {{ days }} dias</span>
+        <span class="pill conf">Documento confidencial</span>
+      </div>
     </div>
-    <div class="report-meta">
-      <div class="report-kind">Relatório de exposição de dados e ameaças externas</div>
-      <h1>{{ client.name }}</h1>
-      <div>Emitido em {{ generated_at | dt }}</div>
-      <div>Última varredura: {{ last_scan.finished_at | dt if last_scan else 'nenhuma concluída' }}</div>
-      <div class="confidential">CONFIDENCIAL — uso restrito do cliente</div>
+    <div class="prepared">
+      <div class="eyebrow muted">Preparado exclusivamente para</div>
+      <div class="client">{{ client.name }}</div>
+      <div class="assets">{{ client.domains | map(attribute='name') | join(' · ') or 'nenhum domínio' }}</div>
+      <div class="muted">Última varredura: {{ last_scan.finished_at | dt if last_scan else 'nenhuma concluída' }}</div>
     </div>
   </header>
 
   <section>
-    <h2>1. Resumo executivo</h2>
-    <div class="summary">
-      <div class="risk sev-{{ risk }}">
-        <span>Nível de risco</span><strong>{{ risk_label }}</strong>
-      </div>
-      <div class="kpi"><strong>{{ total }}</strong><span>achados no total</span></div>
-      <div class="kpi"><strong>{{ new_total }}</strong><span>novos nos últimos {{ days }} dias</span></div>
+    <div class="eyebrow"><span class="num">01</span>Visão geral</div>
+    <h2 style="font-size:1.6rem;margin-top:.5rem">Resumo <span class="hl">executivo</span></h2>
+    <div class="bar"></div>
+    <div class="stats">
+      <div class="stat risk sev-{{ risk }}"><span>Nível de risco</span><strong>{{ risk_label }}</strong></div>
+      <div class="stat"><strong>{{ total }}</strong><span>achados no total</span></div>
+      <div class="stat hi"><strong>{{ new_total }}</strong><span>novos nos últimos {{ days }} dias</span></div>
       {% for key, label, count in by_severity[:4] %}
-      <div class="kpi sev-border-{{ key }}"><strong>{{ count }}</strong><span>{{ label }}</span></div>
+      <div class="stat sev-{{ key }}"><strong>{{ count }}</strong><span>{{ label }}</span></div>
       {% endfor %}
     </div>
-    <p>Ativos monitorados: <strong>{{ client.domains | map(attribute='name') | join(', ') or 'nenhum domínio' }}</strong>
-      {% if client.emails %} e <strong>{{ client.emails | length }}</strong> e-mail(s) prioritário(s){% endif %}.</p>
-    {% if sections %}
-    <ul>
-      {% for s in sections %}
-      <li><strong>{{ s.label }}:</strong> {{ s['items'] | length }} achado(s){% if s.new %}, {{ s.new }} novo(s){% endif %}.</li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <p>Nenhuma exposição foi identificada nas fontes consultadas.</p>
-    {% endif %}
+    <div class="grid2">
+      <div class="card">
+        <span class="eyebrow">O que foi monitorado</span>
+        <ul class="list">
+          <li>Domínios <span class="muted">{{ client.domains | length }}</span></li>
+          <li>E-mails prioritários <span class="muted">{{ client.emails | length }}</span></li>
+          <li>Fontes de inteligência consultadas <span class="muted">{{ sources | length }}</span></li>
+        </ul>
+      </div>
+      <div class="card hi">
+        <span class="eyebrow">O que foi encontrado</span>
+        {% if sections %}
+        <ul class="list">
+          {% for s in sections %}
+          <li>{{ s.label }} <span>{{ s['items'] | length }}{% if s.new %} <span class="badge new">{{ s.new }} novo(s)</span>{% endif %}</span></li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p>Nenhuma exposição foi identificada nas fontes consultadas.</p>
+        {% endif %}
+      </div>
+    </div>
   </section>
 
   {% for s in sections %}
   <section class="report-section">
-    <h2>{{ loop.index + 1 }}. {{ s.label }}</h2>
-    <table>
-      <thead><tr><th>Gravidade</th><th>Ativo</th><th>Achado</th><th>Data</th></tr></thead>
-      <tbody>
-      {% for f in s['items'] %}
-        <tr>
-          <td><span class="badge sev-{{ f.severity }}">{{ f.severity_label }}</span>
-            {% if f.id in new_ids %}<span class="badge new">Novo</span>{% endif %}</td>
-          <td>{{ f.asset }}</td>
-          <td><strong>{{ f.title }}</strong><div class="detail">{{ f.detail }}</div></td>
-          <td class="nowrap">{{ f.event_date or '—' }}</td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
+    <div class="eyebrow"><span class="num">{{ '%02d' % (loop.index + 1) }}</span>{{ s.label }}</div>
+    <h2>{{ s.title[0] }} <span class="hl">{{ s.title[1] }}</span></h2>
+    <div class="bar"></div>
+    <div class="card card-scroll">
+      <table>
+        <thead><tr><th>Gravidade</th><th>Ativo</th><th>Achado</th><th>Data</th></tr></thead>
+        <tbody>
+        {% for f in s['items'] %}
+          <tr>
+            <td><span class="badge sev-{{ f.severity }}">{{ f.severity_label }}</span>
+              {% if f.id in new_ids %}<br><span class="badge new">Novo</span>{% endif %}</td>
+            <td>{{ f.asset }}</td>
+            <td><strong>{{ f.title }}</strong><div class="detail">{{ f.detail }}</div></td>
+            <td class="nowrap">{{ f.event_date or '—' }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
     {% if s.recommendations %}
     <div class="recommend">
-      <strong>Recomendações</strong>
+      <span class="eyebrow">Recomendações</span>
       <ul>{% for r in s.recommendations %}<li>{{ r }}</li>{% endfor %}</ul>
     </div>
     {% endif %}
@@ -79,13 +106,22 @@
   {% endfor %}
 
   <section class="report-section">
-    <h2>{{ sections | length + 2 }}. Metodologia e fontes</h2>
+    <div class="eyebrow"><span class="num">{{ '%02d' % (sections | length + 2) }}</span>Metodologia</div>
+    <h2>Fontes e <span class="hl">método</span></h2>
+    <div class="bar"></div>
     <p>As informações foram coletadas de fontes públicas de inteligência de ameaças, sem acesso a
       ambientes do cliente e sem interação com agentes maliciosos.</p>
-    <ul>{% for name, desc in sources %}<li><strong>{{ name }}:</strong> {{ desc }}</li>{% endfor %}</ul>
+    <div class="card">
+      <ul class="sources">{% for name, desc in sources %}<li><strong>{{ name }}</strong> <span class="muted">{{ desc }}</span></li>{% endfor %}</ul>
+    </div>
     <p class="muted">Correspondências marcadas como "possível" devem ser validadas antes de qualquer ação.
-      A ausência de achados não garante a ausência de exposição. Senhas eventualmente presentes nas
-      fontes não são armazenadas nem reproduzidas neste relatório.</p>
+      A ausência de achados não garante a ausência de exposição. Senhas aparecem somente mascaradas,
+      como fornecidas pelas fontes; senhas completas não são armazenadas nem reproduzidas neste relatório.</p>
   </section>
+
+  <footer class="report-footer">
+    <span>{{ settings.company_footer }}</span>
+    <span>{{ settings.company_address }}</span>
+  </footer>
 </article>
 {% endblock %}

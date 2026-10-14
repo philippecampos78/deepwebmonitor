@@ -107,7 +107,8 @@ def test_hudsonrock_domain_and_email():
         }),
         "https://cavalier.hudsonrock.com/api/json/v2/osint-tools/search-by-email": (200, {
             "stealers": [{"date_compromised": "2026-01-02T00:00:00.000Z", "stealer_family": "Lumma",
-                          "computer_name": "PC-01", "top_passwords": ["ab*****"]}],
+                          "computer_name": "PC-01", "top_passwords": ["ab*****", "SenhaSemMascara1"],
+                          "top_logins": ["j***@empresa.com.br"]}],
         }),
     }))
     dom = c.collect_domain("empresa.com.br")
@@ -115,7 +116,8 @@ def test_hudsonrock_domain_and_email():
     assert "vpn.empresa.com.br" in dom[0].detail and "RedLine (4)" in dom[0].detail
     em = c.collect_email("ceo@empresa.com.br")
     assert len(em) == 1 and "Lumma" in em[0].detail
-    assert "ab*****" not in em[0].detail  # senhas não são gravadas
+    assert "ab*****" in em[0].detail and "j***@empresa.com.br" in em[0].detail
+    assert "SenhaSemMascara1" not in em[0].detail and "Se**" in em[0].detail  # nunca grava senha completa
 
 
 def test_lookalike():
@@ -193,7 +195,8 @@ def test_web_flow():
         r = tc.post(f"/clients/{cid}/emails", data={"addresses": "ceo@empresa.com.br, ruim"})
         assert "ceo@empresa.com.br" in r.text and "Inválidos: ruim" in r.text
         r = tc.get(f"/clients/{cid}/report")
-        assert r.status_code == 200 and "Resumo executivo" in r.text
+        assert r.status_code == 200 and "Resumo <span class=\"hl\">executivo</span>" in r.text
+        assert "theme-light" in tc.get(f"/clients/{cid}/report?tema=claro").text
         assert tc.get("/").status_code == 200
 
 

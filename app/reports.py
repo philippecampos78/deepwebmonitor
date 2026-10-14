@@ -3,7 +3,7 @@
 from collections import Counter
 from datetime import timedelta
 
-from .models import CATEGORY_LABELS, SEVERITIES, SEVERITY_LABELS, Client, utcnow
+from .models import CATEGORY_LABELS, CATEGORY_TITLES, SEVERITIES, SEVERITY_LABELS, Client, utcnow
 
 RECOMMENDATIONS = {
     "ransomware": [
@@ -74,6 +74,7 @@ def build_report(client: Client, days: int) -> dict:
             sections.append({
                 "key": cat,
                 "label": label,
+                "title": CATEGORY_TITLES.get(cat, (label, "")),
                 "items": items,
                 "new": sum(1 for f in items if f.id in new_ids),
                 "recommendations": RECOMMENDATIONS.get(cat, []),

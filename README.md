@@ -75,6 +75,24 @@ computadores da rede).
 Achados já conhecidos não são duplicados; o relatório destaca como "Novo" o que
 apareceu no período escolhido.
 
+## Verificar senha
+
+O menu **Verificar senha** confere se uma senha aparece em vazamentos públicos
+(Pwned Passwords, do HIBP, gratuito). Só os 5 primeiros caracteres do hash SHA-1
+saem do servidor (k-anonimato); a senha não é gravada nem registrada. Use com o
+cliente para confirmar se a senha de uma conta exposta é a atual.
+
+Nos relatórios, as senhas encontradas pelas fontes (ex.: Hudson Rock) aparecem
+apenas **mascaradas** (ex.: `ab*******`), do jeito que a fonte entrega. Se algum
+valor vier sem máscara, o site mascara antes de gravar.
+
+## Identidade visual
+
+Cores, fonte (Poppins, incluída em `app/static/fonts`, licença OFL) e logo seguem a
+proposta comercial da UXGUARD. Nome, logo e rodapé dos relatórios são configuráveis
+no `.env` (`COMPANY_NAME`, `COMPANY_LOGO`, `COMPANY_FOOTER`, `COMPANY_ADDRESS`).
+O relatório tem versão escura (padrão) e clara, para impressão em papel.
+
 ## Cuidados (LGPD e segurança)
 
 - Tenha autorização em contrato de cada cliente para o monitoramento.
