@@ -33,4 +33,23 @@ SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 def init_db(bind=None) -> None:
     from . import models  # noqa: F401  (registra as tabelas)
 
-    Base.metadata.create_all(bind=bind or engine)
+    bind = bind or engine
+    Base.metadata.create_all(bind=bind)
+    _add_missing_columns(bind)
+
+
+# Colunas criadas depois da primeira versão: (tabela, coluna, definição SQL)
+_NEW_COLUMNS = [
+    ("clients", "scan_sources", "TEXT NOT NULL DEFAULT ''"),
+]
+
+
+def _add_missing_columns(bind) -> None:
+    """Atualiza bancos criados por versões anteriores sem apagar dados."""
+    from sqlalchemy import inspect, text
+
+    insp = inspect(bind)
+    with bind.begin() as conn:
+        for table, column, ddl in _NEW_COLUMNS:
+            if table in insp.get_table_names() and column not in {c["name"] for c in insp.get_columns(table)}:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}"))

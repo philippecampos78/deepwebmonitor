@@ -93,8 +93,10 @@ no final dele (vazias ou com o valor padrão); os valores que você já preenche
 ## Uso
 
 1. Cadastre o cliente, os domínios e (opcional) e-mails importantes.
-2. Clique em **Executar varredura**. A página se atualiza sozinha até terminar
-   (o dnstwist pode levar alguns minutos por domínio).
+2. Em **Fontes da varredura**, marque as fontes que quer usar (ou use os atalhos
+   *Todas*, *Só as rápidas* e *Nenhuma*) e clique em **Executar varredura**. A escolha
+   fica salva para o cliente. As fontes marcadas como **lenta** (dnstwist, crt.sh e
+   VirusTotal) podem levar alguns minutos. A página se atualiza sozinha até terminar.
 3. Clique em **Gerar relatório** e use **Imprimir / Salvar em PDF**.
 
 Achados já conhecidos não são duplicados; o relatório destaca como "Novo" o que

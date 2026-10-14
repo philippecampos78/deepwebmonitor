@@ -53,6 +53,8 @@ class Client(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(200), unique=True)
     notes: Mapped[str] = mapped_column(Text, default="")
+    # Fontes escolhidas na última varredura, separadas por vírgula ("" = todas)
+    scan_sources: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
 
     domains: Mapped[list["Domain"]] = relationship(

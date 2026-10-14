@@ -207,3 +207,57 @@ def test_supports_only_implemented_kinds():
     assert HudsonRockCollector(None).supports("email")
     assert not HIBPCollector(None, api_key="").supports("email")
     assert HIBPCollector(None, api_key="k").supports("email")
+
+
+def test_scan_only_selected_sources(session):
+    client = Client(name="Seleção", domains=[Domain(name="acme.com")])
+    session.add(client)
+    session.commit()
+    a, b = FakeCollector(), FakeCollector()
+    b.name, b.label = "outra", "Outra"
+    scan = ScanRun(client_id=client.id)
+    session.add(scan)
+    session.commit()
+    run_scan(session, client.id, scan.id, collectors=[a, b], only={"fake"})
+    assert a.calls == 1 and b.calls == 0
+    assert "Fontes escolhidas: Fake" in scan.log
+
+
+def test_old_database_gets_new_column(tmp_path):
+    from sqlalchemy import create_engine, inspect, text
+    engine = create_engine(f"sqlite:///{tmp_path}/old.db")
+    with engine.begin() as conn:  # tabela como era antes da escolha de fontes
+        conn.execute(text("CREATE TABLE clients (id INTEGER PRIMARY KEY, name VARCHAR(200) UNIQUE, notes TEXT, created_at DATETIME)"))
+        conn.execute(text("INSERT INTO clients (name, notes) VALUES ('Cliente antigo', '')"))
+    dbmod.init_db(engine)
+    assert "scan_sources" in {c["name"] for c in inspect(engine).get_columns("clients")}
+    with engine.connect() as conn:
+        assert conn.execute(text("SELECT name, scan_sources FROM clients")).one() == ("Cliente antigo", "")
+    dbmod.init_db(engine)  # rodar de novo não dá erro
+
+
+def test_web_source_picker(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    import app.main as main
+
+    started = []
+    monkeypatch.setattr(main, "_scan_in_background", lambda cid, sid, only=None: started.append(only))
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    dbmod.SessionLocal.configure(bind=engine)
+    dbmod.engine = engine
+    with TestClient(main.app) as tc:
+        dbmod.init_db(engine)
+        r = tc.post("/clients", data={"name": "Picker"})
+        cid = int(str(r.url).split("/clients/")[1].split("?")[0])
+        tc.post(f"/clients/{cid}/domains", data={"name": "picker.com.br"})
+        page = tc.get(f"/clients/{cid}").text
+        assert 'value="ransomware_live" data-slow="0"\n               checked' in page  # 1ª vez: todas marcadas
+        assert 'value="lookalike" data-slow="1"' in page
+        r = tc.post(f"/clients/{cid}/scan", data={"fontes": []})
+        assert "Selecione ao menos uma fonte" in r.text and not started
+        r = tc.post(f"/clients/{cid}/scan", data={"fontes": ["ransomware_live", "hudsonrock", "inexistente"]})
+        assert started == [{"ransomware_live", "hudsonrock"}] and "2 fonte(s)" in r.text
+        page = tc.get(f"/clients/{cid}").text  # a escolha fica salva
+        assert 'value="hudsonrock" data-slow="0"\n               checked' in page
+        assert 'value="ahmia" data-slow="0"\n               checked' not in page

@@ -18,6 +18,7 @@ class LookalikeCollector(Collector):
     name = "lookalike"
     label = "Domínios parecidos (dnstwist)"
     description = "Domínios registrados parecidos com o do cliente, usados em phishing."
+    slow = True
 
     def __init__(self, http, run=None, enabled: bool | None = None):
         super().__init__(http)

@@ -36,7 +36,8 @@ def save_findings(db: Session, client: Client, items: list[FindingData]) -> int:
 
 
 def run_scan(db: Session, client_id: int, scan_id: int,
-             collectors: list[Collector] | None = None) -> ScanRun:
+             collectors: list[Collector] | None = None, only: set[str] | None = None) -> ScanRun:
+    """Executa as fontes; `only` limita aos nomes escolhidos (None = todas)."""
     scan = db.get(ScanRun, scan_id)
     client = db.get(Client, client_id)
     log: list[str] = []
@@ -53,6 +54,9 @@ def run_scan(db: Session, client_id: int, scan_id: int,
             collectors = build_collectors(http)
         try:
             client_domains = {d.name.lower() for d in client.domains}
+            if only is not None:
+                collectors = [c for c in collectors if c.name in only]
+                write_log("Fontes escolhidas: " + ", ".join(c.label for c in collectors))
             for c in collectors:
                 c.client_domains = client_domains
                 if not c.enabled():

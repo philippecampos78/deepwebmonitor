@@ -100,9 +100,16 @@ def collectors_status():
     out = []
     for cls in COLLECTOR_CLASSES:
         c = cls(http=None)
-        out.append({"label": c.label, "description": c.description,
+        out.append({"name": c.name, "label": c.label, "description": c.description, "slow": c.slow,
                     "enabled": c.enabled(), "reason": c.disabled_reason(), "note": c.status_note()})
     return out
+
+
+def selected_sources(client: Client) -> set[str]:
+    """Fontes marcadas para o cliente: a última escolha, ou todas na primeira vez."""
+    names = {c.name for c in COLLECTOR_CLASSES}
+    chosen = {s for s in (client.scan_sources or "").split(",") if s in names}
+    return chosen or names
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -141,7 +148,7 @@ def client_detail(request: Request, client_id: int, msg: str = "", db: Session =
     running = any(s.status == "executando" for s in client.scans)
     return templates.TemplateResponse(request, "client.html", {
         "client": client, "findings": findings, "msg": msg, "running": running,
-        "scans": client.scans[:10],
+        "scans": client.scans[:10], "sources": collectors_status(), "selected": selected_sources(client),
     })
 
 
@@ -208,26 +215,33 @@ def delete_email(client_id: int, email_id: int, db: Session = Depends(get_db)):
     return redirect(f"/clients/{client_id}")
 
 
-def _scan_in_background(client_id: int, scan_id: int):
+def _scan_in_background(client_id: int, scan_id: int, only: set[str] | None = None):
     db = dbmod.SessionLocal()
     try:
-        run_scan(db, client_id, scan_id)
+        run_scan(db, client_id, scan_id, only=only)
     finally:
         db.close()
 
 
 @app.post("/clients/{client_id}/scan")
-def start_scan(client_id: int, background: BackgroundTasks, db: Session = Depends(get_db)):
+def start_scan(client_id: int, background: BackgroundTasks, fontes: list[str] = Form(default=[]),
+               db: Session = Depends(get_db)):
     client = get_client(db, client_id)
+    available = {c["name"] for c in collectors_status() if c["enabled"]}
+    chosen = {f for f in fontes if f in available}
+    if not chosen:
+        return redirect(f"/clients/{client_id}", "Selecione ao menos uma fonte para a varredura.")
     if not client.domains and not client.emails:
         return redirect(f"/clients/{client_id}", "Cadastre ao menos um domínio ou e-mail antes de varrer.")
     if any(s.status == "executando" for s in client.scans):
         return redirect(f"/clients/{client_id}", "Já existe uma varredura em andamento.")
+    client.scan_sources = ",".join(sorted(chosen))
     scan = ScanRun(client_id=client.id)
     db.add(scan)
     db.commit()
-    background.add_task(_scan_in_background, client.id, scan.id)
-    return redirect(f"/clients/{client_id}", "Varredura iniciada. Atualize a página em alguns minutos.")
+    background.add_task(_scan_in_background, client.id, scan.id, chosen)
+    return redirect(f"/clients/{client_id}",
+                    f"Varredura iniciada com {len(chosen)} fonte(s). A página se atualiza sozinha.")
 
 
 @app.get("/clients/{client_id}/report", response_class=HTMLResponse)

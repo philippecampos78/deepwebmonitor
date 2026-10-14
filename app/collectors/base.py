@@ -36,6 +36,7 @@ class Collector:
     name = "base"
     label = "Base"
     description = ""
+    slow = False  # pode levar minutos (aparece marcada como "lenta" na escolha de fontes)
 
     def __init__(self, http: httpx.Client):
         self.http = http

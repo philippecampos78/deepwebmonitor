@@ -11,9 +11,7 @@
     <div class="bar"></div>
   </div>
   <div class="actions">
-    <form method="post" action="/clients/{{ client.id }}/scan">
-      <button class="btn" {% if running %}disabled{% endif %}>{{ 'Varredura em andamento…' if running else 'Executar varredura' }}</button>
-    </form>
+    <button class="btn" form="scan-form" {% if running %}disabled{% endif %}>{{ 'Varredura em andamento…' if running else 'Executar varredura' }}</button>
     <a class="btn secondary" href="/clients/{{ client.id }}/report">Gerar relatório</a>
   </div>
 </div>
@@ -57,6 +55,35 @@
   </section>
 </div>
 
+<section class="card">
+  <form method="post" action="/clients/{{ client.id }}/scan" id="scan-form">
+    <div class="sources-head">
+      <span class="eyebrow">Fontes da varredura</span>
+      <div class="actions">
+        <button type="button" class="btn small secondary" data-pick="all">Todas</button>
+        <button type="button" class="btn small secondary" data-pick="fast">Só as rápidas</button>
+        <button type="button" class="btn small secondary" data-pick="none">Nenhuma</button>
+      </div>
+    </div>
+    <div class="picker">
+      {% for s in sources %}
+      <label class="pick{% if not s.enabled %} off{% endif %}" title="{{ s.description }}">
+        <input type="checkbox" name="fontes" value="{{ s.name }}" data-slow="{{ 1 if s.slow else 0 }}"
+               {% if s.enabled and s.name in selected %}checked{% endif %} {% if not s.enabled %}disabled{% endif %}>
+        <span>
+          <strong>{{ s.label }}</strong>{% if s.slow %} <span class="tag">lenta</span>{% endif %}
+          <span class="detail">{{ s.reason if not s.enabled else s.description }}</span>
+        </span>
+      </label>
+      {% endfor %}
+    </div>
+    <div class="picker-foot">
+      <span class="muted" id="pick-count"></span>
+      <button class="btn" {% if running %}disabled{% endif %}>{{ 'Varredura em andamento…' if running else 'Executar varredura' }}</button>
+    </div>
+  </form>
+</section>
+
 <section class="card card-scroll">
   <span class="eyebrow">Achados</span>
   {% if findings %}
@@ -94,5 +121,19 @@
       onsubmit='return confirm({{ ("Excluir " ~ client.name ~ " e todos os achados?") | tojson }});'>
   <button class="link danger">Excluir cliente</button>
 </form>
-{% if running %}<script>setTimeout(() => location.reload(), 15000);</script>{% endif %}
+<script>
+(() => {
+  const boxes = [...document.querySelectorAll('#scan-form input[name=fontes]:not(:disabled)')];
+  const count = document.getElementById('pick-count');
+  const update = () => { count.textContent = `${boxes.filter(b => b.checked).length} de ${boxes.length} fontes selecionadas`; };
+  document.querySelectorAll('[data-pick]').forEach(btn => btn.addEventListener('click', () => {
+    const mode = btn.dataset.pick;
+    boxes.forEach(b => { b.checked = mode === 'all' || (mode === 'fast' && b.dataset.slow === '0'); });
+    update();
+  }));
+  boxes.forEach(b => b.addEventListener('change', update));
+  update();
+})();
+{% if running %}setTimeout(() => location.reload(), 15000);{% endif %}
+</script>
 {% endblock %}

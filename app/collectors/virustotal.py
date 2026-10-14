@@ -19,6 +19,7 @@ class VirusTotalCollector(Collector):
     name = "virustotal"
     label = "VirusTotal"
     description = "Reputação do domínio em cerca de 90 antivírus e listas de bloqueio."
+    slow = True
 
     _last_call = 0.0  # compartilhado entre instâncias: o limite é por chave
 

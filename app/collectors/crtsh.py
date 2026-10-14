@@ -48,6 +48,7 @@ class CrtShCollector(Collector):
     name = "crtsh"
     label = "crt.sh (certificados)"
     description = "Certificados recém-emitidos para domínios com o nome do cliente (sites falsos)."
+    slow = True
 
     def __init__(self, http, days: int | None = None):
         super().__init__(http)
