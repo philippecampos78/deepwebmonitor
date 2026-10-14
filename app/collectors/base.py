@@ -26,6 +26,13 @@ class FindingData:
     merge_key: str = ""
 
 
+@dataclass
+class ClientInfo:
+    name: str
+    domains: list[str]
+    suppliers: list[tuple[str, str]]  # (nome, domínio opcional)
+
+
 class CollectorError(Exception):
     """Falha numa fonte. `findings` guarda o que foi coletado antes do problema."""
 
@@ -59,9 +66,13 @@ class Collector:
         return ""
 
     def supports(self, kind: str) -> bool:
-        """A fonte consulta esse tipo de item ("domain" ou "email")?"""
-        method = "collect_domain" if kind == "domain" else "collect_email"
+        """A fonte consulta esse tipo de item ("domain", "email" ou "client")?"""
+        method = {"domain": "collect_domain", "email": "collect_email", "client": "collect_client"}[kind]
         return getattr(type(self), method) is not getattr(Collector, method)
+
+    def collect_client(self, client: "ClientInfo") -> list[FindingData]:
+        """Consulta o cliente como um todo (nome, domínios e fornecedores)."""
+        return []
 
     def collect_domain(self, domain: str) -> list[FindingData]:
         return []

@@ -51,6 +51,12 @@ RECOMMENDATIONS = {
         "Ativar DKIM em todos os provedores de e-mail usados.",
         "Implantar DMARC: começar com p=none e relatórios (rua), evoluir para p=quarantine e p=reject.",
     ],
+    "terceiros": [
+        "Confirmar com o fornecedor o escopo do incidente e se dados ou acessos da organização foram afetados.",
+        "Revisar e, se necessário, revogar credenciais, integrações e VPNs compartilhadas com o fornecedor.",
+        "Redobrar a atenção a e-mails e cobranças que usem o nome do fornecedor (fraudes após incidentes são comuns).",
+        "Registrar o incidente na gestão de riscos de terceiros e exigir evidências de remediação.",
+    ],
     "incidente_proprio": [
         "Confirmar se o incidente já foi tratado e comunicado.",
         "Garantir que as senhas dos usuários afetados foram redefinidas.",
@@ -73,6 +79,7 @@ METHOD_SCOPE = [
     "Serviços e vulnerabilidades expostos à internet",
     "Domínios, certificados e páginas que imitam a marca (phishing)",
     "Proteção do domínio contra falsificação de e-mails (SPF, DKIM e DMARC)",
+    "Incidentes públicos envolvendo a organização e seus fornecedores e parceiros",
 ]
 
 # Trocas aplicadas aos textos dos achados no relatório do cliente, para não revelar as

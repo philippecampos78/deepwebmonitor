@@ -3,7 +3,8 @@ import httpx
 from ..config import settings
 from .abusech import AbuseChCollector
 from .ahmia import AhmiaCollector
-from .base import Collector, CollectorError, FindingData
+from .base import ClientInfo, Collector, CollectorError, FindingData
+from .catalogo import CatalogoBRCollector
 from .crtsh import CrtShCollector
 from .email_security import EmailSecurityCollector
 from .github_code import GitHubCodeCollector
@@ -23,6 +24,7 @@ COLLECTOR_CLASSES = [
     HIBPCollector,
     XposedOrNotCollector,
     LeakCheckCollector,
+    CatalogoBRCollector,
     RansomwareLiveCollector,
     RansomLookCollector,
     HudsonRockCollector,
@@ -49,5 +51,5 @@ def build_collectors(http: httpx.Client) -> list[Collector]:
     return [cls(http) for cls in COLLECTOR_CLASSES]
 
 
-__all__ = ["Collector", "CollectorError", "FindingData", "build_collectors", "make_http_client",
+__all__ = ["ClientInfo", "Collector", "CollectorError", "FindingData", "build_collectors", "make_http_client",
            "COLLECTOR_CLASSES"]

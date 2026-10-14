@@ -38,6 +38,8 @@ class Settings:
     urlscan_days: int = int(os.getenv("URLSCAN_DAYS", "90"))
     dns_mode: str = os.getenv("DNS_MODE", "doh").strip().lower()
     dns_doh_url: str = os.getenv("DNS_DOH_URL", "https://cloudflare-dns.com/dns-query")
+    catalogo_url: str = os.getenv("CATALOGO_URL", "").strip().rstrip("/")
+    catalogo_api_key: str = os.getenv("CATALOGO_API_KEY", "")
     ransomlook_days: int = int(os.getenv("RANSOMLOOK_DAYS", "90"))
     crtsh_days: int = int(os.getenv("CRTSH_DAYS", "90"))
     database_url: str = os.getenv("DATABASE_URL", "sqlite:///data/deepwebmonitor.db")

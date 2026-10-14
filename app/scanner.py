@@ -5,7 +5,8 @@ import threading
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .collectors import COLLECTOR_CLASSES, Collector, CollectorError, FindingData, build_collectors, make_http_client
+from .collectors import (COLLECTOR_CLASSES, ClientInfo, Collector, CollectorError, FindingData, build_collectors,
+                         make_http_client)
 from .models import SEVERITIES, Client, Finding, ScanRun, utcnow
 
 SOURCE_LABELS = {cls.name: cls.label for cls in COLLECTOR_CLASSES}
@@ -100,6 +101,10 @@ def run_scan(db: Session, client_id: int, scan_id: int,
                     write_log(f"[{c.label}] ignorado: {c.disabled_reason()}")
                     continue
                 targets = []
+                if c.supports("client"):
+                    info = ClientInfo(name=client.name, domains=[d.name for d in client.domains],
+                                      suppliers=[(s.name, s.domain) for s in client.suppliers])
+                    targets.append(("cliente e fornecedores", client.name, lambda _v, c=c, info=info: c.collect_client(info)))
                 if c.supports("domain"):
                     targets += [("domínio", d.name, c.collect_domain) for d in client.domains]
                 if c.supports("email"):

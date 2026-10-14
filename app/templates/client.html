@@ -53,6 +53,22 @@
       <button class="btn small">Adicionar</button>
     </form>
   </section>
+
+  <section class="card">
+    <span class="eyebrow">Fornecedores e parceiros</span>
+    <ul class="list">
+      {% for s in client.suppliers %}
+      <li><span>{{ s.name }}{% if s.domain %} <span class="muted">· {{ s.domain }}</span>{% endif %}</span>
+        <form method="post" action="/clients/{{ client.id }}/suppliers/{{ s.id }}/delete" class="inline">
+          <button class="link danger">remover</button></form></li>
+      {% else %}<li class="muted">Folha de pagamento, contabilidade, TI, logística: incidentes neles afetam o cliente.</li>{% endfor %}
+    </ul>
+    <form method="post" action="/clients/{{ client.id }}/suppliers" class="row">
+      <input name="name" placeholder="Nome do fornecedor" required>
+      <input name="domain" placeholder="dominio.com.br (opcional)">
+      <button class="btn small">Adicionar</button>
+    </form>
+  </section>
 </div>
 
 <section class="card">

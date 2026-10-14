@@ -17,7 +17,8 @@ from sqlalchemy.orm import Session
 from . import db as dbmod
 from .collectors import COLLECTOR_CLASSES
 from .config import settings
-from .models import CATEGORY_LABELS, SEVERITIES, SEVERITY_LABELS, Client, Domain, MonitoredEmail, ScanRun
+from .models import (CATEGORY_LABELS, SEVERITIES, SEVERITY_LABELS, Client, Domain, MonitoredEmail, ScanRun,
+                     Supplier)
 from .collectors import make_http_client
 from .pwned import PwnedCheckError, pwned_count
 from .reports import build_report, public_text
@@ -269,6 +270,31 @@ def add_emails(client_id: int, addresses: str = Form(...), db: Session = Depends
     return redirect(f"/clients/{client_id}", msg)
 
 
+@app.post("/clients/{client_id}/suppliers")
+def add_supplier(client_id: int, name: str = Form(...), domain: str = Form(""), db: Session = Depends(get_db)):
+    client = get_client(db, client_id)
+    name = name.strip()
+    dom = normalize_domain(domain) if domain.strip() else ""
+    if not name:
+        return redirect(f"/clients/{client_id}", "Informe o nome do fornecedor ou parceiro.")
+    if dom and not DOMAIN_RE.match(dom):
+        return redirect(f"/clients/{client_id}", f"Domínio inválido: {domain}")
+    if any(s.name.lower() == name.lower() for s in client.suppliers):
+        return redirect(f"/clients/{client_id}", "Fornecedor já cadastrado.")
+    db.add(Supplier(client_id=client.id, name=name, domain=dom))
+    db.commit()
+    return redirect(f"/clients/{client_id}")
+
+
+@app.post("/clients/{client_id}/suppliers/{supplier_id}/delete")
+def delete_supplier(client_id: int, supplier_id: int, db: Session = Depends(get_db)):
+    s = db.get(Supplier, supplier_id)
+    if s and s.client_id == client_id:
+        db.delete(s)
+        db.commit()
+    return redirect(f"/clients/{client_id}")
+
+
 @app.post("/clients/{client_id}/emails/{email_id}/delete")
 def delete_email(client_id: int, email_id: int, db: Session = Depends(get_db)):
     e = db.get(MonitoredEmail, email_id)
@@ -294,7 +320,7 @@ def start_scan(client_id: int, background: BackgroundTasks, fontes: list[str] = 
     chosen = {f for f in fontes if f in available}
     if not chosen:
         return redirect(f"/clients/{client_id}", "Selecione ao menos uma fonte para a varredura.")
-    if not client.domains and not client.emails:
+    if not client.domains and not client.emails and not client.suppliers:
         return redirect(f"/clients/{client_id}", "Cadastre ao menos um domínio ou e-mail antes de varrer.")
     if any(s.status == "executando" for s in client.scans):
         return redirect(f"/clients/{client_id}", "Já existe uma varredura em andamento.")

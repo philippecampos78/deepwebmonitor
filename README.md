@@ -23,6 +23,7 @@ públicas de inteligência de ameaças e gerar relatórios.
 | **urlscan.io** | Páginas falsas com a marca do cliente ou copiando o visual do site. | Não (opcional) |
 | **crt.sh** | Certificados recém-emitidos para domínios com o nome do cliente (sites falsos). | Não |
 | **dnstwist** | Domínios parecidos registrados (phishing / typosquatting). Roda localmente. | Não |
+| **Catálogo de Vazamentos BR** | Incidentes públicos no Brasil envolvendo o cliente e seus **fornecedores e parceiros** (risco de terceiros). Sistema próprio, repositório `catalogo-vazamentos-br`. | Chave própria |
 
 ### Chaves gratuitas (opcionais)
 
@@ -78,6 +79,23 @@ pede o usuário/senha definidos no `.env`.
 
 O site escuta somente em `127.0.0.1` (não fica acessível para outros
 computadores da rede).
+
+## Catálogo de Vazamentos BR (risco de terceiros)
+
+Instale e abra o catálogo (repositório `catalogo-vazamentos-br`, porta 8001; veja o
+README dele) e configure no `.env` deste projeto:
+
+```
+CATALOGO_URL=http://127.0.0.1:8001
+CATALOGO_API_KEY=<o mesmo valor de API_KEY do catálogo>
+```
+
+Na página de cada cliente, cadastre em **Fornecedores e parceiros** as empresas
+que têm acesso a dados ou sistemas dele (folha de pagamento, contabilidade, TI,
+logística...). A varredura consulta o catálogo pelo nome e domínio do cliente e
+de cada fornecedor; os achados de fornecedores vão para a seção **Risco de
+terceiros** do relatório. Correspondências só pelo nome aparecem como
+"possível, validar". Incidentes com mais de um ano perdem um nível de gravidade.
 
 ## Atualizar para uma versão nova
 
