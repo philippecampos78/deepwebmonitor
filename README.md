@@ -15,6 +15,10 @@ públicas de inteligência de ameaças e gerar relatórios.
 | **GitHub + gitleaks** | Senhas, tokens e chaves expostos em repositórios públicos que citam o domínio. | Token gratuito do GitHub |
 | **abuse.ch (URLhaus e ThreatFox)** | Site do cliente distribuindo malware ou usado como infraestrutura de ataque. | Chave gratuita |
 | **AlienVault OTX** | Domínio citado em relatórios de ameaças da comunidade. | Não (opcional) |
+| **VirusTotal** | Domínio marcado como malicioso por antivírus e listas de bloqueio. | Chave gratuita |
+| **Shodan InternetDB + CISA KEV** | Portas sensíveis abertas (RDP, bancos de dados...) e CVEs nos servidores do cliente; as exploradas ativamente viram críticas. | Não |
+| **SPF / DKIM / DMARC** | Se o domínio pode ser falsificado em e-mails de phishing. | Não |
+| **urlscan.io** | Páginas falsas com a marca do cliente ou copiando o visual do site. | Não (opcional) |
 | **crt.sh** | Certificados recém-emitidos para domínios com o nome do cliente (sites falsos). | Não |
 | **dnstwist** | Domínios parecidos registrados (phishing / typosquatting). Roda localmente. | Não |
 
@@ -26,6 +30,14 @@ Coloque no `.env`. Fontes sem chave aparecem desativadas no painel.
   token *fine-grained* com acesso "Public repositories (read-only)" e nenhuma permissão extra.
 - **ABUSECH_AUTH_KEY**: em https://auth.abuse.ch/ (login com GitHub, Google ou LinkedIn).
 - **OTX_API_KEY**: em https://otx.alienvault.com, menu *Settings* > *API Key*.
+- **VIRUSTOTAL_API_KEY**: crie a conta em https://www.virustotal.com e copie a chave em
+  *menu do perfil* > *API key* (plano gratuito: 4 consultas/minuto, 500/dia).
+- **URLSCAN_API_KEY**: crie a conta em https://urlscan.io/user/signup e gere a chave em
+  *Settings & API*. Sem ela, a busca pela marca só encontra domínios que começam com o nome.
+
+As consultas DNS (SPF/DKIM/DMARC e IPs) usam DNS via HTTPS da Cloudflare por padrão
+(`DNS_MODE=doh`), o que funciona atrás de proxy corporativo. Use `DNS_MODE=local`
+para usar o DNS do computador.
 
 ### gitleaks (opcional, recomendado)
 

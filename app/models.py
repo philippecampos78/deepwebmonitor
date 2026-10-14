@@ -25,6 +25,9 @@ CATEGORY_LABELS = {
     "dark_web": "Menções na dark web",
     "codigo_exposto": "Credenciais e dados expostos em código público",
     "ioc": "Domínio em bases de indicadores de ameaça",
+    "exposicao": "Serviços e vulnerabilidades expostos na internet",
+    "phishing": "Páginas falsas usando a marca",
+    "email_seguranca": "Proteção do domínio contra e-mails falsificados",
     "incidente_proprio": "Incidentes envolvendo o próprio domínio",
     "dominio_similar": "Domínios e certificados parecidos (possível phishing)",
 }
@@ -37,6 +40,9 @@ CATEGORY_TITLES = {
     "dark_web": ("Menções na", "dark web"),
     "codigo_exposto": ("Código", "exposto"),
     "ioc": ("Indicadores de", "ameaça"),
+    "exposicao": ("Serviços", "expostos"),
+    "phishing": ("Páginas de", "phishing"),
+    "email_seguranca": ("Segurança de", "e-mail"),
     "incidente_proprio": ("Incidentes do", "próprio domínio"),
     "dominio_similar": ("Domínios", "parecidos"),
 }

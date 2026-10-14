@@ -35,6 +35,21 @@ RECOMMENDATIONS = {
         "Remover o conteúdo malicioso e corrigir a vulnerabilidade explorada.",
         "Solicitar a remoção do domínio das listas após a limpeza, para evitar bloqueios de reputação.",
     ],
+    "exposicao": [
+        "Fechar no firewall as portas de administração e bancos de dados expostos; acesso só por VPN.",
+        "Aplicar imediatamente os patches das vulnerabilidades exploradas ativamente (KEV) e priorizar as demais.",
+        "Revisar se cada serviço publicado é necessário e tem dono responsável.",
+    ],
+    "phishing": [
+        "Avaliar cada página e, se confirmada a fraude, pedir a remoção ao provedor e ao registrador.",
+        "Alertar funcionários e clientes sobre o endereço falso.",
+        "Bloquear os domínios no proxy, DNS e gateway de e-mail.",
+    ],
+    "email_seguranca": [
+        "Publicar SPF terminando em \"-all\" com todos os serviços que enviam e-mail pelo domínio.",
+        "Ativar DKIM em todos os provedores de e-mail usados.",
+        "Implantar DMARC: começar com p=none e relatórios (rua), evoluir para p=quarantine e p=reject.",
+    ],
     "incidente_proprio": [
         "Confirmar se o incidente já foi tratado e comunicado.",
         "Garantir que as senhas dos usuários afetados foram redefinidas.",
@@ -55,6 +70,10 @@ SOURCES = [
     ("GitHub + gitleaks", "Busca de código público que menciona o domínio e detecção de segredos."),
     ("abuse.ch (URLhaus e ThreatFox)", "Bases de URLs maliciosas e indicadores de ameaça."),
     ("AlienVault OTX", "Relatórios de ameaças compartilhados pela comunidade."),
+    ("VirusTotal", "Reputação do domínio em antivírus e listas de bloqueio."),
+    ("Shodan InternetDB + CISA KEV", "Portas abertas e vulnerabilidades, com destaque para as exploradas ativamente."),
+    ("SPF / DKIM / DMARC", "Registros DNS que protegem o domínio contra e-mails falsificados."),
+    ("urlscan.io", "Páginas analisadas publicamente que imitam a marca ou o site do cliente."),
     ("crt.sh", "Logs públicos de certificados TLS (Certificate Transparency)."),
     ("dnstwist", "Geração de variações do domínio e verificação de registro no DNS."),
 ]

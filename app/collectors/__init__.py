@@ -5,13 +5,17 @@ from .abusech import AbuseChCollector
 from .ahmia import AhmiaCollector
 from .base import Collector, CollectorError, FindingData
 from .crtsh import CrtShCollector
+from .email_security import EmailSecurityCollector
 from .github_code import GitHubCodeCollector
 from .hibp import HIBPCollector
 from .hudsonrock import HudsonRockCollector
+from .internetdb import InternetDBCollector
 from .lookalike import LookalikeCollector
 from .otx import OTXCollector
 from .ransomlook import RansomLookCollector
 from .ransomware_live import RansomwareLiveCollector
+from .urlscan import UrlscanCollector
+from .virustotal import VirusTotalCollector
 
 COLLECTOR_CLASSES = [
     HIBPCollector,
@@ -22,6 +26,10 @@ COLLECTOR_CLASSES = [
     GitHubCodeCollector,
     AbuseChCollector,
     OTXCollector,
+    VirusTotalCollector,
+    InternetDBCollector,
+    EmailSecurityCollector,
+    UrlscanCollector,
     CrtShCollector,
     LookalikeCollector,
 ]
