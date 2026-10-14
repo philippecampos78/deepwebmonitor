@@ -5,6 +5,8 @@ credenciais ligadas ao domínio ou e-mail consultado. As senhas que a API
 devolve (já mascaradas) não são gravadas.
 """
 
+import time
+
 from .base import Collector, FindingData
 from .matching import ensure_masked
 
@@ -40,6 +42,18 @@ def _password_strength(stats) -> str:
     return f"{stats['totalPass']} senhas analisadas: " + ", ".join(parts) if parts else ""
 
 
+def _third_parties(data: dict) -> str:
+    items = [f"{t['domain']} ({t.get('occurrence', '?')}x)" for t in (data.get("thirdPartyDomains") or [])[:8]
+             if isinstance(t, dict) and t.get("domain")]
+    return ", ".join(items)
+
+
+def _no_antivirus(data: dict) -> str:
+    av = data.get("antiviruses") or {}
+    value = av.get("not_found") if isinstance(av, dict) else None
+    return f"{value}%" if isinstance(value, (int, float)) else ""
+
+
 def _urls(entries) -> str:
     out = []
     for e in (entries or [])[:10]:
@@ -53,6 +67,19 @@ class HudsonRockCollector(Collector):
     name = "hudsonrock"
     label = "Hudson Rock"
     description = "Computadores infectados por infostealer (credenciais roubadas por malware)."
+    # Também verifica os e-mails do cliente descobertos por outras fontes (ex.: busca por domínio)
+    checks_discovered_emails = True
+    _last_call = 0.0
+
+    def __init__(self, http, min_interval: float = 1.0):
+        super().__init__(http)
+        self.min_interval = min_interval
+
+    def _throttle(self):
+        wait = HudsonRockCollector._last_call + self.min_interval - time.monotonic()
+        if wait > 0:
+            time.sleep(wait)
+        HudsonRockCollector._last_call = time.monotonic()
 
     def collect_domain(self, domain: str) -> list[FindingData]:
         domain = domain.lower()
@@ -85,6 +112,13 @@ class HudsonRockCollector(Collector):
             strength = _password_strength(data.get(pass_key)) if pass_key else ""
             if strength:
                 detail += f" Força das senhas roubadas: {strength}."
+            if key == "employees":
+                if _third_parties(data):
+                    detail += f" Serviços de terceiros usados pelos funcionários afetados: {_third_parties(data)}."
+                if _no_antivirus(data):
+                    detail += f" Computadores infectados sem antivírus identificado: {_no_antivirus(data)}."
+                detail += (" A consulta gratuita por domínio informa apenas quantidades; as contas afetadas são"
+                           " identificadas na verificação individual dos e-mails corporativos conhecidos.")
             findings.append(FindingData(
                 source=self.name,
                 category="infostealer",
@@ -99,6 +133,7 @@ class HudsonRockCollector(Collector):
         return findings
 
     def collect_email(self, email: str) -> list[FindingData]:
+        self._throttle()
         data = self.get_json(f"{API}/search-by-email", params={"email": email},
                              not_found_value={}) or {}
         findings = []

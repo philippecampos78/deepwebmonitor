@@ -9,6 +9,19 @@ from .collectors import COLLECTOR_CLASSES, Collector, CollectorError, FindingDat
 from .models import SEVERITIES, Client, Finding, ScanRun, utcnow
 
 SOURCE_LABELS = {cls.name: cls.label for cls in COLLECTOR_CLASSES}
+MAX_DISCOVERED_EMAILS = 100
+
+
+def discovered_emails(db: Session, client: Client, domains: set[str], known: set[str]) -> list[str]:
+    """E-mails do domínio do cliente que aparecem em achados (ex.: vazamentos), ainda não cadastrados."""
+    out = []
+    for asset in db.scalars(select(Finding.asset).where(Finding.client_id == client.id).distinct()):
+        addr = (asset or "").strip().lower()
+        if "@" not in addr or addr in known or addr in out:
+            continue
+        if any(addr.endswith("@" + d) or addr.endswith("." + d) for d in domains):
+            out.append(addr)
+    return sorted(out)[:MAX_DISCOVERED_EMAILS]
 
 # Uma varredura por vez: algumas fontes têm limite de requisições e o dnstwist
 # não é seguro para rodar em paralelo.
@@ -90,7 +103,14 @@ def run_scan(db: Session, client_id: int, scan_id: int,
                 if c.supports("domain"):
                     targets += [("domínio", d.name, c.collect_domain) for d in client.domains]
                 if c.supports("email"):
+                    monitored = {e.address.lower() for e in client.emails}
                     targets += [("e-mail", e.address, c.collect_email) for e in client.emails]
+                    if c.checks_discovered_emails:
+                        extra = discovered_emails(db, client, client_domains, monitored)
+                        if extra:
+                            write_log(f"[{c.label}] verificando também {len(extra)} e-mail(s) do domínio "
+                                      "encontrados por outras fontes")
+                        targets += [("e-mail descoberto", addr, c.collect_email) for addr in extra]
                 for kind, value, fn in targets:
                     try:
                         items = fn(value)

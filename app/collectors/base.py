@@ -39,6 +39,9 @@ class Collector:
     label = "Base"
     description = ""
     slow = False  # pode levar minutos (aparece marcada como "lenta" na escolha de fontes)
+    # True = além dos e-mails cadastrados, consulta os e-mails do domínio do cliente
+    # que outras fontes já encontraram (limitado a MAX_DISCOVERED_EMAILS por varredura)
+    checks_discovered_emails = False
 
     def __init__(self, http: httpx.Client):
         self.http = http

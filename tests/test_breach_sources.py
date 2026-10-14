@@ -79,3 +79,43 @@ def test_same_breach_from_two_sources_is_one_finding(session):
     assert len(client.findings) == 2 and len(adobe) == 1
     assert adobe[0].severity == "alta"  # fica com a maior gravidade
     assert adobe[0].detail.count("Confirmado também por: XposedOrNot.") == 1
+
+
+def test_hudson_checks_emails_discovered_by_other_sources(session):
+    from app.collectors.hudsonrock import HudsonRockCollector
+
+    client = Client(name="Descoberta", emails=[MonitoredEmail(address="ceo@empresa.com.br")])
+    from app.models import Domain
+    client.domains = [Domain(name="empresa.com.br")]
+    session.add(client)
+    session.commit()
+    # 1ª fonte: a busca por domínio revela e-mails que não estavam cadastrados
+    class DomainLeak(Collector):
+        name, label = "hibp", "HIBP"
+
+        def collect_domain(self, domain):
+            return [
+                FindingData("hibp", "vazamento", "media", "joao@empresa.com.br", "joao no Canva", "l1"),
+                FindingData("hibp", "vazamento", "media", "maria@filial.empresa.com.br", "maria no Adobe", "l2"),
+                FindingData("hibp", "vazamento", "media", "fulano@gmail.com", "outro domínio", "l3"),
+            ]
+    leak = DomainLeak(None)
+    asked = []
+
+    def handler(request):
+        asked.append(request.url.params.get("email") or request.url.params.get("domain"))
+        if request.url.params.get("email") == "joao@empresa.com.br":
+            return httpx.Response(200, json={"stealers": [{"date_compromised": "2026-10-01T00:00:00Z",
+                                                           "top_logins": ["j***@empresa.com.br"],
+                                                           "top_passwords": ["Se******"]}]})
+        return httpx.Response(200, json={"stealers": []})
+    hr = HudsonRockCollector(httpx.Client(transport=httpx.MockTransport(handler)), min_interval=0)
+    scan = ScanRun(client_id=client.id)
+    session.add(scan)
+    session.commit()
+    run_scan(session, client.id, scan.id, collectors=[leak, hr])
+    assert set(asked) == {"empresa.com.br", "ceo@empresa.com.br", "joao@empresa.com.br", "maria@filial.empresa.com.br"}
+    assert "verificando também 2 e-mail(s)" in scan.log
+    session.refresh(client)
+    joao = [f for f in client.findings if f.source == "hudsonrock" and f.asset == "joao@empresa.com.br"]
+    assert len(joao) == 1 and "j***@empresa.com.br" in joao[0].detail and "Se******" in joao[0].detail
