@@ -261,3 +261,26 @@ def test_web_source_picker(monkeypatch):
         page = tc.get(f"/clients/{cid}").text  # a escolha fica salva
         assert 'value="hudsonrock" data-slow="0"\n               checked' in page
         assert 'value="ahmia" data-slow="0"\n               checked' not in page
+
+
+def test_logo_resolution(tmp_path):
+    from app.main import DEFAULT_LOGO, resolve_logo
+    custom = tmp_path / "minha-logo.PNG"
+    custom.write_bytes(b"\x89PNG")
+    assert resolve_logo("") == (DEFAULT_LOGO, "")
+    assert resolve_logo("img/logo-uxguard.png")[0] == DEFAULT_LOGO
+    assert resolve_logo("static\\img\\logo-uxguard.png")[0] == DEFAULT_LOGO  # barra invertida do Windows
+    assert resolve_logo(f'"{custom}"') == (custom, "")  # caminho completo, com aspas
+    path, warning = resolve_logo("logo.png")
+    assert path == DEFAULT_LOGO and "não foi encontrada" in warning
+    assert resolve_logo(str(tmp_path))[1]  # pasta não é imagem
+
+
+def test_logo_route_serves_image():
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+    with TestClient(app) as tc:
+        r = tc.get("/marca/logo")
+        assert r.status_code == 200 and r.headers["content-type"] == "image/png" and r.content[:4] == b"\x89PNG"
+        assert 'src="/marca/logo"' in tc.get("/").text

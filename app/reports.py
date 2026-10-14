@@ -63,6 +63,8 @@ RECOMMENDATIONS = {
 
 SOURCES = [
     ("Have I Been Pwned", "Catálogo de vazamentos de dados públicos e busca por domínio verificado."),
+    ("XposedOrNot", "Catálogo aberto de vazamentos de dados, consultado por e-mail."),
+    ("LeakCheck", "Base de vazamentos e combolists, consultada por e-mail."),
     ("ransomware.live", "Monitoramento de sites de vazamento mantidos por grupos de ransomware."),
     ("Hudson Rock (OSINT)", "Base de computadores infectados por malware do tipo infostealer."),
     ("RansomLook", "Segunda base de sites de vazamento de ransomware, com outros grupos monitorados."),

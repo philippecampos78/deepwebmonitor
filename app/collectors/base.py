@@ -22,6 +22,8 @@ class FindingData:
     detail: str = ""
     reference_url: str = ""
     event_date: str = ""
+    # Mesmo valor em fontes diferentes = mesmo achado (ex.: o mesmo vazamento no HIBP e no XposedOrNot)
+    merge_key: str = ""
 
 
 class CollectorError(Exception):

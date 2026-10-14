@@ -21,7 +21,7 @@ class Settings:
     app_user: str = os.getenv("APP_USER", "soc")
     app_password: str = os.getenv("APP_PASSWORD", "")
     company_name: str = os.getenv("COMPANY_NAME", "UXGUARD")
-    company_logo: str = os.getenv("COMPANY_LOGO", "") or "img/logo-uxguard.png"
+    company_logo: str = os.getenv("COMPANY_LOGO", "")
     company_footer: str = os.getenv("COMPANY_FOOTER", "UXGUARD LTDA · CNPJ 57.270.568/0001-40")
     company_address: str = os.getenv(
         "COMPANY_ADDRESS", "Rua dos Guajajaras, 1570 · Sala 502 · Belo Horizonte/MG · CEP 30.180-099")

@@ -8,6 +8,8 @@ públicas de inteligência de ameaças e gerar relatórios.
 | Fonte | O que encontra | Precisa de chave? |
 |---|---|---|
 | **Have I Been Pwned** | Se o próprio site do cliente já sofreu vazamento (catálogo público). Com a chave do plano já contratado: e-mails vazados de domínios verificados no painel e e-mails monitorados. | Não (opcional) |
+| **XposedOrNot** | Em quais vazamentos cada e-mail prioritário aparece (catálogo próprio, parecido com o do HIBP). | Não |
+| **LeakCheck** | Em quais vazamentos e combolists cada e-mail prioritário aparece. | Não |
 | **ransomware.live** | Cliente listado em site de vazamento de grupo de ransomware. | Não |
 | **RansomLook** | Idem, segunda base (outros grupos). Lê os últimos `RANSOMLOOK_DAYS` dias. | Não |
 | **Hudson Rock (OSINT)** | Funcionários/usuários com credenciais roubadas por malware infostealer. | Não |
@@ -100,7 +102,9 @@ no final dele (vazias ou com o valor padrão); os valores que você já preenche
 3. Clique em **Gerar relatório** e use **Imprimir / Salvar em PDF**.
 
 Achados já conhecidos não são duplicados; o relatório destaca como "Novo" o que
-apareceu no período escolhido.
+apareceu no período escolhido. Quando o mesmo vazamento aparece em mais de uma fonte
+(HIBP, XposedOrNot, LeakCheck), ele vira um achado só, com a anotação "Confirmado
+também por" e a maior gravidade entre as fontes.
 
 ## Verificar senha
 

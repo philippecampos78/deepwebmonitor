@@ -10,15 +10,19 @@ from .github_code import GitHubCodeCollector
 from .hibp import HIBPCollector
 from .hudsonrock import HudsonRockCollector
 from .internetdb import InternetDBCollector
+from .leakcheck import LeakCheckCollector
 from .lookalike import LookalikeCollector
 from .otx import OTXCollector
 from .ransomlook import RansomLookCollector
 from .ransomware_live import RansomwareLiveCollector
 from .urlscan import UrlscanCollector
 from .virustotal import VirusTotalCollector
+from .xposedornot import XposedOrNotCollector
 
 COLLECTOR_CLASSES = [
     HIBPCollector,
+    XposedOrNotCollector,
+    LeakCheckCollector,
     RansomwareLiveCollector,
     RansomLookCollector,
     HudsonRockCollector,

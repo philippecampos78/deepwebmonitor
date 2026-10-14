@@ -110,6 +110,7 @@ class Finding(Base):
     reference_url: Mapped[str] = mapped_column(String(1000), default="")
     event_date: Mapped[str] = mapped_column(String(40), default="")
     fingerprint: Mapped[str] = mapped_column(String(500))
+    merge_key: Mapped[str] = mapped_column(String(500), default="")
     first_seen: Mapped[datetime] = mapped_column(default=utcnow)
     last_seen: Mapped[datetime] = mapped_column(default=utcnow)
 

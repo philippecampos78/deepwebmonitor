@@ -5,8 +5,10 @@ import threading
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .collectors import Collector, CollectorError, FindingData, build_collectors, make_http_client
-from .models import Client, Finding, ScanRun, utcnow
+from .collectors import COLLECTOR_CLASSES, Collector, CollectorError, FindingData, build_collectors, make_http_client
+from .models import SEVERITIES, Client, Finding, ScanRun, utcnow
+
+SOURCE_LABELS = {cls.name: cls.label for cls in COLLECTOR_CLASSES}
 
 # Uma varredura por vez: algumas fontes têm limite de requisições e o dnstwist
 # não é seguro para rodar em paralelo.
@@ -18,21 +20,43 @@ def save_findings(db: Session, client: Client, items: list[FindingData]) -> int:
     if not items:
         return 0
     now = utcnow()
-    existing = {
-        f.fingerprint: f
-        for f in db.scalars(select(Finding).where(Finding.client_id == client.id))
-    }
+    current = list(db.scalars(select(Finding).where(Finding.client_id == client.id)))
+    existing = {f.fingerprint: f for f in current}
+    by_merge = {f.merge_key: f for f in current if f.merge_key}
     new = 0
     for item in items:
         found = existing.get(item.fingerprint)
         if found:
             found.last_seen = now
+            if item.merge_key and not found.merge_key:
+                found.merge_key = item.merge_key
+                by_merge.setdefault(item.merge_key, found)
+            continue
+        same = by_merge.get(item.merge_key) if item.merge_key else None
+        if same:  # o mesmo vazamento já veio de outra fonte: só registra a confirmação
+            _confirm(same, item, now)
+            existing[item.fingerprint] = same
             continue
         f = Finding(client_id=client.id, first_seen=now, last_seen=now, **item.__dict__)
         db.add(f)
         existing[item.fingerprint] = f
+        if item.merge_key:
+            by_merge[item.merge_key] = f
         new += 1
     return new
+
+
+def _confirm(finding: Finding, item: FindingData, now) -> None:
+    finding.last_seen = now
+    if item.source != finding.source:
+        label = SOURCE_LABELS.get(item.source, item.source)
+        if "Confirmado também por: " not in finding.detail:
+            finding.detail = f"{finding.detail} Confirmado também por: {label}."
+        elif label not in finding.detail:
+            finding.detail = finding.detail.rstrip(".") + f", {label}."
+    order = {s: i for i, s in enumerate(SEVERITIES)}
+    if order.get(item.severity, 9) < order.get(finding.severity, 9):  # fica com a gravidade maior
+        finding.severity = item.severity
 
 
 def run_scan(db: Session, client_id: int, scan_id: int,

@@ -56,3 +56,20 @@ def ensure_masked(value: str) -> str:
     """Valores que a fonte já entrega mascarados (com *) passam; os demais são mascarados aqui."""
     value = str(value).strip()
     return value if "*" in value else mask_secret(value)
+
+
+_SUFFIXES = (".com.br", ".co.uk", ".com", ".net", ".org", ".io", ".br", ".me", ".info", ".co")
+
+
+def breach_key(email: str, breach_name: str) -> str:
+    """Chave que identifica "este e-mail neste vazamento" em qualquer fonte.
+
+    Normaliza o nome do vazamento: "Adobe", "adobe.com" e "Adobe.com" viram "adobe".
+    """
+    name = breach_name.strip().lower()
+    for suffix in _SUFFIXES:
+        if name.endswith(suffix):
+            name = name[: -len(suffix)]
+            break
+    name = "".join(ch for ch in name if ch.isalnum())
+    return f"vazamento:{email.strip().lower()}:{name}"

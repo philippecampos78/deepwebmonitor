@@ -6,7 +6,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -24,6 +24,34 @@ from .reports import build_report
 from .scanner import run_scan
 
 APP_DIR = Path(__file__).resolve().parent
+STATIC_DIR = APP_DIR / "static"
+DEFAULT_LOGO = STATIC_DIR / "img" / "logo-uxguard.png"
+LOGO_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".svg": "image/svg+xml",
+              ".webp": "image/webp", ".gif": "image/gif"}
+
+
+def resolve_logo(value: str) -> tuple[Path, str]:
+    """Encontra o arquivo da logo configurada em COMPANY_LOGO.
+
+    Aceita caminho relativo a app/static (com / ou \\, com ou sem "static/" no início)
+    ou caminho completo do Windows/Linux. Se não achar, usa a logo padrão e devolve
+    um aviso para o painel.
+    """
+    raw = (value or "").strip().strip('"').strip("'")
+    if not raw:
+        return DEFAULT_LOGO, ""
+    rel = raw.replace("\\", "/")
+    for prefix in ("app/static/", "static/", "/static/"):
+        rel = rel.removeprefix(prefix)
+    candidates = [Path(raw), STATIC_DIR / rel]
+    for path in candidates:
+        try:
+            if path.is_file() and path.suffix.lower() in LOGO_TYPES:
+                return path, ""
+        except OSError:
+            continue
+    return DEFAULT_LOGO, (f"A logo configurada em COMPANY_LOGO ({raw}) não foi encontrada ou não é uma imagem "
+                          f"(.png, .jpg, .svg, .webp). Usando a logo padrão.")
 DOMAIN_RE = re.compile(r"^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[a-z]{2,63}$")
 
@@ -122,6 +150,7 @@ def index(request: Request, msg: str = "", db: Session = Depends(get_db)):
                      "last_scan": c.scans[0] if c.scans else None})
     return templates.TemplateResponse(request, "index.html", {
         "rows": rows, "msg": msg, "collectors": collectors_status(), "severities": SEVERITIES,
+        "logo_warning": resolve_logo(settings.company_logo)[1],
     })
 
 
@@ -275,6 +304,19 @@ def senhas_check(request: Request, senha: str = Form(...)):
     finally:
         del senha
     return _no_store(templates.TemplateResponse(request, "senhas.html", {"count": count, "error": error}))
+
+
+@app.get("/marca/logo")
+def logo():
+    path, _ = resolve_logo(settings.company_logo)
+    if not path.is_file():  # nem a logo padrão existe (instalação incompleta): mostra o nome em texto
+        from html import escape
+        svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="360" height="80"><text x="0" y="56" '
+               f'font-family="Poppins,Arial,sans-serif" font-size="48" font-weight="700" fill="#000">'
+               f'{escape(settings.company_name)}</text></svg>')
+        return Response(svg, media_type="image/svg+xml")
+    return FileResponse(path, media_type=LOGO_TYPES.get(path.suffix.lower(), "image/png"),
+                        headers={"Cache-Control": "max-age=300"})
 
 
 @app.get("/health")

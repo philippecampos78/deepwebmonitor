@@ -41,6 +41,7 @@ def init_db(bind=None) -> None:
 # Colunas criadas depois da primeira versão: (tabela, coluna, definição SQL)
 _NEW_COLUMNS = [
     ("clients", "scan_sources", "TEXT NOT NULL DEFAULT ''"),
+    ("findings", "merge_key", "VARCHAR(500) NOT NULL DEFAULT ''"),
 ]
 
 

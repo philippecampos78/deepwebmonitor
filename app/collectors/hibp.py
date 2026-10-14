@@ -10,6 +10,7 @@ from urllib.parse import quote
 
 from ..config import settings
 from .base import Collector, CollectorError, FindingData
+from .matching import breach_key
 
 API = "https://haveibeenpwned.com/api/v3"
 
@@ -114,6 +115,7 @@ class HIBPCollector(Collector):
             reference_url=f"https://haveibeenpwned.com/Breach/{quote(breach_name)}",
             event_date=b.get("BreachDate", ""),
             fingerprint=f"hibp:account:{email.lower()}:{breach_name}",
+            merge_key=breach_key(email, breach_name),
         )
 
     def collect_domain(self, domain: str) -> list[FindingData]:
