@@ -121,7 +121,8 @@ valor vier sem máscara, o site mascara antes de gravar.
 
 Cores, fonte (Poppins, incluída em `app/static/fonts`, licença OFL) e logo seguem a
 proposta comercial da UXGUARD. Nome, logo e rodapé dos relatórios são configuráveis
-no `.env` (`COMPANY_NAME`, `COMPANY_LOGO`, `COMPANY_FOOTER`, `COMPANY_ADDRESS`).
+no `.env` (`COMPANY_NAME`, `COMPANY_LOGO`, `COMPANY_LOGO_BRANCA`, `COMPANY_FOOTER`,
+`COMPANY_ADDRESS`). A logo original em SVG fica em `marca/`, com as instruções de uso.
 O relatório tem versão escura (padrão) e clara, para impressão em papel.
 
 ## Cuidados (LGPD e segurança)

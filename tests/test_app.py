@@ -283,4 +283,40 @@ def test_logo_route_serves_image():
     with TestClient(app) as tc:
         r = tc.get("/marca/logo")
         assert r.status_code == 200 and r.headers["content-type"] == "image/png" and r.content[:4] == b"\x89PNG"
-        assert 'src="/marca/logo"' in tc.get("/").text
+        assert 'src="/marca/logo?fundo=escuro"' in tc.get("/").text
+
+
+def test_logo_variants_by_background(monkeypatch, tmp_path):
+    import dataclasses
+
+    import app.main as main
+
+    def with_env(**kw):
+        monkeypatch.setattr(main, "settings", dataclasses.replace(main.settings, **kw))
+
+    with_env(company_logo="", company_logo_white="")
+    assert main.logo_for("claro") == (main.DEFAULT_LOGO, False)
+    assert main.logo_for("escuro") == (main.DEFAULT_LOGO_WHITE, False)
+    with_env(company_logo="img/logo-uxguard.png", company_logo_white="")  # nome antigo no .env
+    assert main.logo_for("escuro") == (main.DEFAULT_LOGO_WHITE, False) and not main.logo_warnings()
+    custom = tmp_path / "cliente.png"
+    custom.write_bytes(b"\x89PNG")
+    with_env(company_logo=str(custom), company_logo_white="")  # só a preta personalizada: clareia por CSS
+    assert main.logo_for("escuro") == (custom, True)
+    with_env(company_logo=str(custom), company_logo_white="nao-existe.png")
+    assert main.logo_for("escuro") == (main.DEFAULT_LOGO_WHITE, False)
+    assert any("COMPANY_LOGO_BRANCA" in w for w in main.logo_warnings())
+    assert main.DEFAULT_LOGO.is_file() and main.DEFAULT_LOGO_WHITE.is_file()
+
+
+def test_logo_markup_per_theme():
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+    with TestClient(app) as tc:
+        assert 'src="/marca/logo?fundo=escuro"' in tc.get("/").text
+        assert tc.get("/marca/logo?fundo=escuro").content != tc.get("/marca/logo?fundo=claro").content
+        r = tc.post("/clients", data={"name": "Logo teste"})
+        cid = int(str(r.url).split("/clients/")[1].split("?")[0])
+        assert "/marca/logo?fundo=claro" in tc.get(f"/clients/{cid}/report?tema=claro").text
+        assert "auto-white" not in tc.get(f"/clients/{cid}/report").text

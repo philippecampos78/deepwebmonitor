@@ -25,13 +25,16 @@ from .scanner import run_scan
 
 APP_DIR = Path(__file__).resolve().parent
 STATIC_DIR = APP_DIR / "static"
-DEFAULT_LOGO = STATIC_DIR / "img" / "logo-uxguard.png"
+DEFAULT_LOGO = STATIC_DIR / "img" / "logo-uxguard-preto.png"          # para fundo claro
+DEFAULT_LOGO_WHITE = STATIC_DIR / "img" / "logo-uxguard-branco.png"   # para fundo escuro
+# Nomes usados por versões anteriores do site: apontam para a logo atual
+LEGACY_LOGOS = {"img/logo-uxguard.png", "img/logo-uxguard.svg"}
 LOGO_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".svg": "image/svg+xml",
               ".webp": "image/webp", ".gif": "image/gif"}
 
 
-def resolve_logo(value: str) -> tuple[Path, str]:
-    """Encontra o arquivo da logo configurada em COMPANY_LOGO.
+def resolve_logo(value: str, default: Path = DEFAULT_LOGO, setting: str = "COMPANY_LOGO") -> tuple[Path, str]:
+    """Encontra o arquivo de logo configurado no .env.
 
     Aceita caminho relativo a app/static (com / ou \\, com ou sem "static/" no início)
     ou caminho completo do Windows/Linux. Se não achar, usa a logo padrão e devolve
@@ -39,10 +42,12 @@ def resolve_logo(value: str) -> tuple[Path, str]:
     """
     raw = (value or "").strip().strip('"').strip("'")
     if not raw:
-        return DEFAULT_LOGO, ""
+        return default, ""
     rel = raw.replace("\\", "/")
     for prefix in ("app/static/", "static/", "/static/"):
         rel = rel.removeprefix(prefix)
+    if rel in LEGACY_LOGOS:
+        return default, ""
     candidates = [Path(raw), STATIC_DIR / rel]
     for path in candidates:
         try:
@@ -50,8 +55,31 @@ def resolve_logo(value: str) -> tuple[Path, str]:
                 return path, ""
         except OSError:
             continue
-    return DEFAULT_LOGO, (f"A logo configurada em COMPANY_LOGO ({raw}) não foi encontrada ou não é uma imagem "
-                          f"(.png, .jpg, .svg, .webp). Usando a logo padrão.")
+    return default, (f"A logo configurada em {setting} ({raw}) não foi encontrada ou não é uma imagem "
+                     f"(.png, .jpg, .svg, .webp). Usando a logo padrão.")
+
+
+def logo_for(background: str) -> tuple[Path, bool]:
+    """Arquivo de logo para o fundo ("claro" ou "escuro") e se precisa ser clareado por CSS.
+
+    Fundo escuro usa COMPANY_LOGO_BRANCA. Se só a logo preta for personalizada, ela é
+    usada também no fundo escuro, clareada pelo navegador.
+    """
+    dark_path, _ = resolve_logo(settings.company_logo)
+    if background != "escuro":
+        return dark_path, False
+    if settings.company_logo_white.strip():
+        return resolve_logo(settings.company_logo_white, DEFAULT_LOGO_WHITE, "COMPANY_LOGO_BRANCA")[0], False
+    if dark_path == DEFAULT_LOGO:
+        return DEFAULT_LOGO_WHITE, False
+    return dark_path, True
+
+
+def logo_warnings() -> list[str]:
+    warnings = [resolve_logo(settings.company_logo)[1]]
+    if settings.company_logo_white.strip():
+        warnings.append(resolve_logo(settings.company_logo_white, DEFAULT_LOGO_WHITE, "COMPANY_LOGO_BRANCA")[1])
+    return [w for w in warnings if w]
 DOMAIN_RE = re.compile(r"^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[a-z]{2,63}$")
 
@@ -101,6 +129,8 @@ def fmt_dt(value):
 
 
 templates.env.filters["dt"] = fmt_dt
+# A logo precisa ser clareada por CSS no fundo escuro? (só quando não há versão branca)
+templates.env.globals["logo_needs_filter"] = lambda: logo_for("escuro")[1]
 # Links vêm de fontes externas: só exibe http(s), nunca "javascript:" etc.
 templates.env.filters["is_http"] = lambda u: bool(u) and u.lower().startswith(("https://", "http://"))
 
@@ -150,7 +180,7 @@ def index(request: Request, msg: str = "", db: Session = Depends(get_db)):
                      "last_scan": c.scans[0] if c.scans else None})
     return templates.TemplateResponse(request, "index.html", {
         "rows": rows, "msg": msg, "collectors": collectors_status(), "severities": SEVERITIES,
-        "logo_warning": resolve_logo(settings.company_logo)[1],
+        "logo_warnings": logo_warnings(),
     })
 
 
@@ -307,12 +337,13 @@ def senhas_check(request: Request, senha: str = Form(...)):
 
 
 @app.get("/marca/logo")
-def logo():
-    path, _ = resolve_logo(settings.company_logo)
+def logo(fundo: str = "claro"):
+    path, _ = logo_for(fundo)
     if not path.is_file():  # nem a logo padrão existe (instalação incompleta): mostra o nome em texto
         from html import escape
         svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="360" height="80"><text x="0" y="56" '
-               f'font-family="Poppins,Arial,sans-serif" font-size="48" font-weight="700" fill="#000">'
+               f'font-family="Poppins,Arial,sans-serif" font-size="48" font-weight="700" '
+               f'fill="{"#fff" if fundo == "escuro" else "#000"}">'
                f'{escape(settings.company_name)}</text></svg>')
         return Response(svg, media_type="image/svg+xml")
     return FileResponse(path, media_type=LOGO_TYPES.get(path.suffix.lower(), "image/png"),

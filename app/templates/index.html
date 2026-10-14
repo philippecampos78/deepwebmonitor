@@ -10,7 +10,7 @@
   </div>
 </div>
 
-{% if logo_warning %}<div class="flash">{{ logo_warning }}</div>{% endif %}
+{% for w in logo_warnings %}<div class="flash">{{ w }}</div>{% endfor %}
 
 {% set total_crit = rows | sum(attribute='sev.critica') %}
 {% set total_alta = rows | sum(attribute='sev.alta') %}

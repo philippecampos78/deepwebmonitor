@@ -19,7 +19,8 @@
 <article class="report">
   <header class="report-cover">
     <div>
-      <img class="logo" src="/marca/logo" alt="{{ settings.company_name }}">
+      <img class="logo{% if not light and logo_needs_filter() %} auto-white{% endif %}"
+           src="/marca/logo?fundo={{ 'claro' if light else 'escuro' }}" alt="{{ settings.company_name }}">
       <div class="eyebrow">Segurança da informação · Monitoramento de exposição digital</div>
       <h1>Relatório de<br><span class="hl">exposição digital</span></h1>
       <div class="bar"></div>

@@ -11,7 +11,7 @@
   <header class="topbar no-print">
     <div class="topbar-inner">
       <a class="brand" href="/">
-        <img src="/marca/logo" alt="{{ settings.company_name }}">
+        <img src="/marca/logo?fundo=escuro" alt="{{ settings.company_name }}"{% if logo_needs_filter() %} class="auto-white"{% endif %}>
         <span class="product">DeepWebMonitor</span>
       </a>
       <nav class="nav">

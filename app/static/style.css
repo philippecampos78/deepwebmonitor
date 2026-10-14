@@ -23,7 +23,6 @@
   --media: #E2C04F;
   --baixa: #4C9FE6;
   --info: #7690AA;
-  --logo-filter: brightness(0) invert(1);
   --radius: 10px;
 }
 
@@ -45,7 +44,6 @@
   --alta: #C46A12;
   --media: #9A7A0A;
   --baixa: #2B6DA8;
-  --logo-filter: none;
 }
 
 * { box-sizing: border-box; }
@@ -76,7 +74,9 @@ h2 { font-size: 1.05rem; text-transform: uppercase; }
 .topbar { border-bottom: 1px solid var(--border); background: rgba(14, 28, 44, .6); }
 .topbar-inner { max-width: 1240px; margin: 0 auto; padding: .7rem 1.25rem; display: flex; align-items: center; gap: 1.5rem; }
 .brand { display: flex; align-items: center; gap: .9rem; }
-.brand img { height: 40px; filter: var(--logo-filter); }
+.brand img { height: 40px; }
+/* Logo sem versão branca: o navegador clareia a preta sobre o fundo escuro */
+img.auto-white { filter: brightness(0) invert(1); }
 .brand .product { color: var(--text-2); font-size: .72rem; font-weight: 600; letter-spacing: .22em; text-transform: uppercase;
   border-left: 1px solid var(--border-2); padding-left: .9rem; }
 .nav { margin-left: auto; display: flex; gap: .3rem; }
@@ -212,7 +212,7 @@ th[aria-sort="descending"] .sort-btn i { border-top-color: var(--accent); opacit
 .report { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 2.6rem 2.8rem 2rem; }
 .report-cover { display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: end; padding-bottom: 2rem;
   border-bottom: 1px solid var(--border); margin-bottom: 2.2rem; }
-.report-cover .logo { height: 54px; filter: var(--logo-filter); margin-bottom: 2.2rem; display: block; }
+.report-cover .logo { height: 54px; margin-bottom: 2.2rem; display: block; }
 .report-cover h1 { font-size: 2.6rem; margin-top: .7rem; }
 .report-cover .lead { max-width: 560px; margin: 0; }
 .prepared { text-align: right; }
