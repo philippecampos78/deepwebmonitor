@@ -1,0 +1,111 @@
+:root {
+  --bg: #f4f6f9;
+  --card: #ffffff;
+  --text: #1c2430;
+  --muted: #6b7686;
+  --border: #dde2ea;
+  --primary: #1f4e8c;
+  --primary-text: #ffffff;
+  --critica: #9b1c1c;
+  --alta: #d9480f;
+  --media: #b7791f;
+  --baixa: #2f6f9f;
+  --info: #6b7686;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.5 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
+a { color: var(--primary); }
+h1 { font-size: 1.6rem; margin: .3rem 0 1rem; }
+h2 { font-size: 1.15rem; margin: 0 0 .8rem; }
+.muted { color: var(--muted); }
+
+.topbar { background: #0f2747; color: #fff; padding: .7rem 1.5rem; }
+.brand { color: #fff; text-decoration: none; display: flex; align-items: center; gap: .6rem; }
+.brand img { height: 28px; }
+.brand span { font-weight: 600; }
+.brand small { opacity: .7; }
+.container { max-width: 1200px; margin: 0 auto; padding: 1.2rem 1rem 3rem; }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  padding: 1rem 1.2rem; margin-bottom: 1rem; overflow-x: auto; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; }
+.grid2 .card { margin-bottom: 0; }
+.grid2 + .card { margin-top: 1rem; }
+.flash { background: #e7f1ff; border: 1px solid #b6d4fe; padding: .6rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+.title-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
+.actions { display: flex; gap: .5rem; align-items: center; }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
+td.num, th.num { text-align: center; }
+.detail { color: var(--muted); font-size: .88rem; margin-top: .2rem; word-break: break-word; }
+
+.row { display: flex; gap: .5rem; flex-wrap: wrap; }
+.row input, .row textarea { flex: 1; min-width: 180px; }
+input, textarea { font: inherit; padding: .45rem .6rem; border: 1px solid var(--border); border-radius: 6px; }
+input.tiny { width: 5rem; }
+.btn { display: inline-block; background: var(--primary); color: var(--primary-text); border: 0; border-radius: 6px;
+  padding: .5rem 1rem; font: inherit; cursor: pointer; text-decoration: none; }
+.btn.secondary { background: #e8edf4; color: var(--text); }
+.btn.small { padding: .3rem .7rem; font-size: .88rem; }
+.btn[disabled] { opacity: .6; cursor: wait; }
+.link { background: none; border: 0; color: var(--primary); cursor: pointer; font: inherit; padding: 0; }
+.danger { color: var(--critica); }
+form.inline { display: inline; }
+.list { list-style: none; padding: 0; margin: 0 0 .8rem; }
+.list li { padding: .3rem 0; border-bottom: 1px dashed var(--border); display: flex; justify-content: space-between; }
+pre { white-space: pre-wrap; background: #f7f8fa; padding: .7rem; border-radius: 6px; font-size: .85rem; }
+details summary { cursor: pointer; padding: .3rem 0; }
+
+.badge { display: inline-block; padding: .1rem .5rem; border-radius: 999px; color: #fff; font-size: .8rem; font-weight: 600; white-space: nowrap; }
+.badge.new { background: #0f2747; margin-top: .2rem; }
+.sev-critica { background: var(--critica); color: #fff; }
+.sev-alta { background: var(--alta); color: #fff; }
+.sev-media { background: var(--media); color: #fff; }
+.sev-baixa { background: var(--baixa); color: #fff; }
+.sev-info { background: var(--info); color: #fff; }
+.sources { list-style: none; padding: 0; }
+.sources li { padding: .25rem 0; }
+.dot { display: inline-block; width: .6rem; height: .6rem; border-radius: 50%; margin-right: .4rem; }
+.dot.on { background: #2b8a3e; } .dot.off { background: #adb5bd; }
+
+/* Relatório */
+.report-toolbar { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+.report { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 2rem 2.2rem; }
+.report-header { display: flex; justify-content: space-between; gap: 1rem; border-bottom: 3px solid var(--primary);
+  padding-bottom: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.report-logo { max-height: 60px; display: block; margin-bottom: .4rem; }
+.report-company { font-weight: 700; font-size: 1.2rem; color: var(--primary); }
+.report-meta { text-align: right; }
+.report-kind { text-transform: uppercase; font-size: .78rem; letter-spacing: .05em; color: var(--muted); }
+.report-meta h1 { margin: .2rem 0; }
+.confidential { margin-top: .4rem; font-weight: 700; color: var(--critica); font-size: .8rem; }
+.summary { display: flex; flex-wrap: wrap; gap: .7rem; margin-bottom: 1rem; }
+.risk { border-radius: 8px; padding: .7rem 1.2rem; display: flex; flex-direction: column; justify-content: center; min-width: 150px; }
+.risk span { font-size: .78rem; text-transform: uppercase; opacity: .9; }
+.risk strong { font-size: 1.5rem; }
+.kpi { border: 1px solid var(--border); border-radius: 8px; padding: .6rem 1rem; min-width: 110px; display: flex; flex-direction: column; }
+.kpi strong { font-size: 1.4rem; }
+.kpi span { color: var(--muted); font-size: .85rem; }
+.sev-border-critica { border-left: 5px solid var(--critica); }
+.sev-border-alta { border-left: 5px solid var(--alta); }
+.sev-border-media { border-left: 5px solid var(--media); }
+.sev-border-baixa { border-left: 5px solid var(--baixa); }
+.report-section { margin-top: 1.8rem; }
+.recommend { background: #f2f6fb; border-left: 4px solid var(--primary); padding: .7rem 1rem; margin-top: .8rem; border-radius: 4px; }
+.recommend ul { margin: .3rem 0 0; }
+
+@media print {
+  @page { size: A4; margin: 14mm; }
+  body { background: #fff; font-size: 11pt; }
+  .no-print { display: none !important; }
+  .container { max-width: none; padding: 0; }
+  .report { border: 0; padding: 0; }
+  .badge, .risk, .recommend { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  tr { page-break-inside: avoid; }
+  .report-section h2 { page-break-after: avoid; }
+}
+.nowrap { white-space: nowrap; }

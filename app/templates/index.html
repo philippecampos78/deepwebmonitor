@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Clientes{% endblock %}
+{% block content %}
+<h1>Clientes monitorados</h1>
+
+<section class="card">
+  {% if rows %}
+  <table>
+    <thead>
+      <tr><th>Cliente</th><th>Domínios</th><th>E-mails</th>
+        {% for s in severities[:4] %}<th class="num">{{ SEVERITY_LABELS[s] }}</th>{% endfor %}
+        <th>Última varredura</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td><a href="/clients/{{ r.client.id }}"><strong>{{ r.client.name }}</strong></a></td>
+        <td>{{ r.client.domains | map(attribute='name') | join(', ') or '—' }}</td>
+        <td class="num">{{ r.client.emails | length }}</td>
+        {% for s in severities[:4] %}
+          <td class="num">{% if r.sev[s] %}<span class="badge sev-{{ s }}">{{ r.sev[s] }}</span>{% else %}0{% endif %}</td>
+        {% endfor %}
+        <td>{% if r.last_scan %}{{ r.last_scan.started_at | dt }} <span class="muted">({{ r.last_scan.status }})</span>{% else %}<span class="muted">nunca</span>{% endif %}</td>
+        <td><a class="btn small" href="/clients/{{ r.client.id }}/report">Relatório</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Nenhum cliente cadastrado ainda.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Novo cliente</h2>
+  <form method="post" action="/clients" class="row">
+    <input name="name" placeholder="Nome do cliente" required>
+    <input name="notes" placeholder="Observações (opcional)">
+    <button class="btn">Cadastrar</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Fontes</h2>
+  <ul class="sources">
+  {% for c in collectors %}
+    <li><span class="dot {{ 'on' if c.enabled else 'off' }}"></span>
+      <strong>{{ c.label }}</strong> — {{ c.description }}
+      {% if not c.enabled %}<span class="muted">({{ c.reason }})</span>{% endif %}</li>
+  {% endfor %}
+  </ul>
+  <p class="muted">Have I Been Pwned:
+    {% if hibp_key %}chave configurada — busca por domínio verificado e por e-mail ativas.
+    {% else %}sem chave — apenas o catálogo público de incidentes.{% endif %}</p>
+</section>
+{% endblock %}

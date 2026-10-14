@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Relatório — {{ client.name }}{% endblock %}
+{% block body_class %}report-page{% endblock %}
+{% block content %}
+<div class="no-print report-toolbar">
+  <a href="/clients/{{ client.id }}">← Voltar</a>
+  <form method="get" class="inline">
+    Destacar como novos os achados dos últimos
+    <input type="number" name="dias" value="{{ days }}" min="1" max="3650" class="tiny"> dias
+    <button class="btn small secondary">Atualizar</button>
+  </form>
+  <button class="btn" onclick="window.print()">Imprimir / Salvar em PDF</button>
+</div>
+
+<article class="report">
+  <header class="report-header">
+    <div>
+      {% if settings.company_logo %}<img class="report-logo" src="{{ url_for('static', path=settings.company_logo) }}" alt="">{% endif %}
+      <div class="report-company">{{ settings.company_name }}</div>
+    </div>
+    <div class="report-meta">
+      <div class="report-kind">Relatório de exposição de dados e ameaças externas</div>
+      <h1>{{ client.name }}</h1>
+      <div>Emitido em {{ generated_at | dt }}</div>
+      <div>Última varredura: {{ last_scan.finished_at | dt if last_scan else 'nenhuma concluída' }}</div>
+      <div class="confidential">CONFIDENCIAL — uso restrito do cliente</div>
+    </div>
+  </header>
+
+  <section>
+    <h2>1. Resumo executivo</h2>
+    <div class="summary">
+      <div class="risk sev-{{ risk }}">
+        <span>Nível de risco</span><strong>{{ risk_label }}</strong>
+      </div>
+      <div class="kpi"><strong>{{ total }}</strong><span>achados no total</span></div>
+      <div class="kpi"><strong>{{ new_total }}</strong><span>novos nos últimos {{ days }} dias</span></div>
+      {% for key, label, count in by_severity[:4] %}
+      <div class="kpi sev-border-{{ key }}"><strong>{{ count }}</strong><span>{{ label }}</span></div>
+      {% endfor %}
+    </div>
+    <p>Ativos monitorados: <strong>{{ client.domains | map(attribute='name') | join(', ') or 'nenhum domínio' }}</strong>
+      {% if client.emails %} e <strong>{{ client.emails | length }}</strong> e-mail(s) prioritário(s){% endif %}.</p>
+    {% if sections %}
+    <ul>
+      {% for s in sections %}
+      <li><strong>{{ s.label }}:</strong> {{ s['items'] | length }} achado(s){% if s.new %}, {{ s.new }} novo(s){% endif %}.</li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>Nenhuma exposição foi identificada nas fontes consultadas.</p>
+    {% endif %}
+  </section>
+
+  {% for s in sections %}
+  <section class="report-section">
+    <h2>{{ loop.index + 1 }}. {{ s.label }}</h2>
+    <table>
+      <thead><tr><th>Gravidade</th><th>Ativo</th><th>Achado</th><th>Data</th></tr></thead>
+      <tbody>
+      {% for f in s['items'] %}
+        <tr>
+          <td><span class="badge sev-{{ f.severity }}">{{ f.severity_label }}</span>
+            {% if f.id in new_ids %}<span class="badge new">Novo</span>{% endif %}</td>
+          <td>{{ f.asset }}</td>
+          <td><strong>{{ f.title }}</strong><div class="detail">{{ f.detail }}</div></td>
+          <td class="nowrap">{{ f.event_date or '—' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% if s.recommendations %}
+    <div class="recommend">
+      <strong>Recomendações</strong>
+      <ul>{% for r in s.recommendations %}<li>{{ r }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+  </section>
+  {% endfor %}
+
+  <section class="report-section">
+    <h2>{{ sections | length + 2 }}. Metodologia e fontes</h2>
+    <p>As informações foram coletadas de fontes públicas de inteligência de ameaças, sem acesso a
+      ambientes do cliente e sem interação com agentes maliciosos.</p>
+    <ul>{% for name, desc in sources %}<li><strong>{{ name }}:</strong> {{ desc }}</li>{% endfor %}</ul>
+    <p class="muted">Correspondências marcadas como "possível" devem ser validadas antes de qualquer ação.
+      A ausência de achados não garante a ausência de exposição. Senhas eventualmente presentes nas
+      fontes não são armazenadas nem reproduzidas neste relatório.</p>
+  </section>
+</article>
+{% endblock %}
