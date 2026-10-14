@@ -19,6 +19,9 @@ if not exist ".env" (
     goto :fim
 )
 
+REM Acrescenta ao .env as configuracoes novas (sem alterar as que voce ja preencheu)
+".venv\Scripts\python.exe" scripts\sync_env.py
+
 echo [3/3] Site disponivel em http://127.0.0.1:8000  ^(Ctrl+C para parar^)
 start "" http://127.0.0.1:8000
 ".venv\Scripts\python.exe" -m uvicorn app.main:app --host 127.0.0.1 --port 8000

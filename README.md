@@ -77,6 +77,19 @@ pede o usuário/senha definidos no `.env`.
 O site escuta somente em `127.0.0.1` (não fica acessível para outros
 computadores da rede).
 
+## Atualizar para uma versão nova
+
+Na pasta do projeto, rode:
+
+```powershell
+.\atualizar.bat
+```
+
+Ele baixa a versão nova, mostra qual versão ficou instalada e inicia o site. O seu
+`.env` e os dados (`data/`) não são alterados. Toda vez que o site inicia, as
+configurações novas do `.env.example` que faltarem no seu `.env` são acrescentadas
+no final dele (vazias ou com o valor padrão); os valores que você já preencheu não mudam.
+
 ## Uso
 
 1. Cadastre o cliente, os domínios e (opcional) e-mails importantes.
