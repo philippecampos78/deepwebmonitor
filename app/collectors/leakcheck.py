@@ -7,7 +7,7 @@ Devolve o nome e a data de cada vazamento e quais tipos de dado existem nas base
 import time
 
 from .base import Collector, FindingData
-from .matching import breach_key
+from .matching import STEALER_NOTE, breach_key, is_stealer_source
 
 API = "https://leakcheck.io/api/public"
 MIN_INTERVAL = 1.0
@@ -26,6 +26,7 @@ class LeakCheckCollector(Collector):
     label = "LeakCheck"
     description = "Vazamentos em que cada e-mail prioritário aparece (inclui bases menores e combolists)."
 
+    checks_discovered_emails = True  # também verifica e-mails do cliente encontrados por outras fontes
     _last_call = 0.0
 
     def __init__(self, http, min_interval: float = MIN_INTERVAL):
@@ -49,7 +50,10 @@ class LeakCheckCollector(Collector):
         # Só os campos relevantes, traduzidos e sem repetir ("ip1", "ip2", "region"... ficam de fora)
         types = ", ".join(dict.fromkeys(FIELDS_PT[f] for f in raw_fields if f in FIELDS_PT))
         findings = []
-        for src in (data.get("sources") or [])[:MAX_SOURCES]:
+        sources = [s for s in data.get("sources") or [] if isinstance(s, dict)]
+        # Logs de infostealer primeiro: nunca podem ficar de fora pelo limite de MAX_SOURCES
+        sources.sort(key=lambda s: not is_stealer_source(str(s.get("name") or "")))
+        for src in sources[:MAX_SOURCES]:
             if not isinstance(src, dict) or not src.get("name"):
                 continue
             name, date = str(src["name"]), str(src.get("date") or "")
@@ -57,14 +61,19 @@ class LeakCheckCollector(Collector):
             if types:
                 detail += (f" Dados encontrados para este e-mail no conjunto das bases: {types}."
                            " A API gratuita não informa quais vazaram em cada base.")
+            stealer = is_stealer_source(name)
+            if stealer:
+                detail += STEALER_NOTE
             if has_password:
                 detail += " Há senha associada ao e-mail em pelo menos uma base: confira com \"Verificar senha\"."
             findings.append(FindingData(
                 source=self.name,
-                category="vazamento",
-                severity="media",  # a API gratuita não diz se ESTA base tinha senha
+                category="infostealer" if stealer else "vazamento",
+                # base comum: média (a API gratuita não diz se ESTA base tinha senha); infostealer: crítica
+                severity="critica" if stealer else "media",
                 asset=email,
-                title=f"{email} aparece no vazamento {name}",
+                title=(f"{email} aparece em logs de infostealer ({name})" if stealer
+                       else f"{email} aparece no vazamento {name}"),
                 detail=detail,
                 reference_url="https://leakcheck.io",
                 event_date=date,

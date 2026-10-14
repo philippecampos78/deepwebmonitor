@@ -1,5 +1,7 @@
 """Regras de correspondência compartilhadas entre as fontes que buscam por nome."""
 
+import re
+
 # Segundo nível comum em TLDs de país (empresa.com.br, empresa.co.uk ...)
 _SECOND_LEVEL = {"com", "net", "org", "gov", "edu", "co", "ind", "adv", "eng", "med", "art", "ac"}
 MIN_KEYWORD_LEN = 4
@@ -73,3 +75,15 @@ def breach_key(email: str, breach_name: str) -> str:
             break
     name = "".join(ch for ch in name if ch.isalnum())
     return f"vazamento:{email.strip().lower()}:{name}"
+
+
+# Bases montadas a partir de logs de malware infostealer (credenciais roubadas do computador da vítima)
+_STEALER = re.compile(r"stealer|infostealer|naz\.?api|alien\s*txt\s*base|combolist de logs|\blogs? de malware", re.I)
+
+
+def is_stealer_source(*texts: str) -> bool:
+    return any(_STEALER.search(t or "") for t in texts)
+
+
+STEALER_NOTE = (" Esta base vem de logs de malware infostealer: as credenciais foram capturadas diretamente"
+                " do computador da vítima e costumam incluir senhas atuais e sessões ativas.")

@@ -119,3 +119,30 @@ def test_hudson_checks_emails_discovered_by_other_sources(session):
     session.refresh(client)
     joao = [f for f in client.findings if f.source == "hudsonrock" and f.asset == "joao@empresa.com.br"]
     assert len(joao) == 1 and "j***@empresa.com.br" in joao[0].detail and "Se******" in joao[0].detail
+
+
+def test_stealer_log_sources_become_infostealer_findings():
+    xon = {"ExposedBreaches": {"breaches_details": [
+        {"breach": "AlienStealerLogs", "details": "ALIEN TXTBASE, a stealer log collection", "password_risk": "plaintext",
+         "xposed_data": "Email addresses;Passwords"},
+        {"breach": "Naz.API", "details": "credential stuffing lists", "password_risk": "plaintext"},
+        {"breach": "Canva", "details": "Design platform breach", "password_risk": "hardtocrack"},
+    ]}}
+    found = XposedOrNotCollector(http_for({"https://api.xposedornot.com/": (200, xon)}), min_interval=0) \
+        .collect_email("ceo@empresa.com.br")
+    assert [(f.category, f.severity) for f in found] == [("infostealer", "critica"), ("infostealer", "critica"),
+                                                         ("vazamento", "media")]
+    assert "logs de infostealer" in found[0].title and "computador da vítima" in found[0].detail
+    lc = {"success": True, "fields": ["password"], "sources": [{"name": "Stealer Logs", "date": "2025-03"},
+                                                                 {"name": "eloghomes.com", "date": ""}]}
+    found = LeakCheckCollector(http_for({"https://leakcheck.io/": (200, lc)}), min_interval=0).collect_email("ceo@empresa.com.br")
+    assert [(f.category, f.severity) for f in found] == [("infostealer", "critica"), ("vazamento", "media")]
+
+
+def test_stealer_sources_survive_the_limit():
+    from app.collectors import leakcheck
+    sources = [{"name": f"site{i}.com", "date": ""} for i in range(leakcheck.MAX_SOURCES + 50)]
+    sources.append({"name": "Stealer Logs", "date": "2025-01"})
+    lc = {"success": True, "fields": [], "sources": sources}
+    found = LeakCheckCollector(http_for({"https://leakcheck.io/": (200, lc)}), min_interval=0).collect_email("a@b.com")
+    assert len(found) == leakcheck.MAX_SOURCES and found[0].category == "infostealer"

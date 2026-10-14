@@ -8,8 +8,8 @@ públicas de inteligência de ameaças e gerar relatórios.
 | Fonte | O que encontra | Precisa de chave? |
 |---|---|---|
 | **Have I Been Pwned** | Se o próprio site do cliente já sofreu vazamento (catálogo público). Com a chave do plano já contratado: e-mails vazados de domínios verificados no painel e e-mails monitorados. | Não (opcional) |
-| **XposedOrNot** | Em quais vazamentos cada e-mail prioritário aparece (catálogo próprio, parecido com o do HIBP). | Não |
-| **LeakCheck** | Em quais vazamentos e combolists cada e-mail prioritário aparece. | Não |
+| **XposedOrNot** | Em quais vazamentos cada e-mail aparece (catálogo próprio, parecido com o do HIBP), inclusive coletâneas de logs de infostealer. | Não |
+| **LeakCheck** | Em quais vazamentos e combolists cada e-mail aparece, inclusive a base "Stealer Logs". | Não |
 | **ransomware.live** | Cliente listado em site de vazamento de grupo de ransomware. | Não |
 | **RansomLook** | Idem, segunda base (outros grupos). Lê os últimos `RANSOMLOOK_DAYS` dias. | Não |
 | **Hudson Rock (OSINT)** | Funcionários/usuários com credenciais roubadas por malware infostealer. | Não |
@@ -100,6 +100,10 @@ no final dele (vazias ou com o valor padrão); os valores que você já preenche
    fica salva para o cliente. As fontes marcadas como **lenta** (dnstwist, crt.sh e
    VirusTotal) podem levar alguns minutos. A página se atualiza sozinha até terminar.
 3. Clique em **Gerar relatório** e use **Imprimir / Salvar em PDF**.
+
+Hudson Rock, XposedOrNot e LeakCheck verificam os e-mails prioritários e também os
+e-mails do domínio do cliente que outras fontes já encontraram (até 100 por varredura).
+Vazamentos que vêm de logs de malware infostealer entram como **infostealer / crítica**.
 
 Achados já conhecidos não são duplicados; o relatório destaca como "Novo" o que
 apareceu no período escolhido. Quando o mesmo vazamento aparece em mais de uma fonte
