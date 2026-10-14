@@ -22,8 +22,11 @@ CATEGORY_LABELS = {
     "ransomware": "Exposição em sites de ransomware",
     "infostealer": "Computadores infectados por infostealer",
     "vazamento": "Contas em vazamentos de dados",
+    "dark_web": "Menções na dark web",
+    "codigo_exposto": "Credenciais e dados expostos em código público",
+    "ioc": "Domínio em bases de indicadores de ameaça",
     "incidente_proprio": "Incidentes envolvendo o próprio domínio",
-    "dominio_similar": "Domínios parecidos (possível phishing)",
+    "dominio_similar": "Domínios e certificados parecidos (possível phishing)",
 }
 
 

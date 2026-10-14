@@ -46,30 +46,62 @@ class Collector:
     def disabled_reason(self) -> str:
         return ""
 
+    def status_note(self) -> str:
+        """Observação exibida no painel (ex.: chave opcional ausente)."""
+        return ""
+
     def collect_domain(self, domain: str) -> list[FindingData]:
         return []
 
     def collect_email(self, email: str) -> list[FindingData]:
         return []
 
-    def get_json(self, url: str, *, headers: dict | None = None, params: dict | None = None,
-                 not_found_value=None, retries: int = 3):
-        """GET com tratamento de 404 (sem resultados) e 429 (limite de requisições)."""
+    def request(self, method: str, url: str, *, headers: dict | None = None,
+                params: dict | None = None, data=None, json=None, timeout: float | None = None,
+                retries: int = 3) -> httpx.Response | None:
+        """Requisição com tratamento de 404 (devolve None) e de limite de requisições
+        (429, ou 403 do GitHub com x-ratelimit-remaining=0): espera e tenta de novo."""
+        kwargs = {"headers": headers, "params": params, "data": data, "json": json}
+        if timeout is not None:
+            kwargs["timeout"] = timeout
         for attempt in range(retries + 1):
             try:
-                resp = self.http.get(url, headers=headers, params=params)
+                resp = self.http.request(method, url, **{k: v for k, v in kwargs.items() if v is not None})
             except httpx.HTTPError as exc:
                 raise CollectorError(f"{self.label}: falha de conexão ({exc.__class__.__name__})") from exc
             if resp.status_code == 404:
-                return not_found_value
-            if resp.status_code == 429 and attempt < retries:
-                wait = resp.headers.get("retry-after", "")
-                time.sleep(min(float(wait) if wait.replace(".", "", 1).isdigit() else 2 ** (attempt + 1), 60))
+                return None
+            limited = resp.status_code == 429 or (
+                resp.status_code == 403 and resp.headers.get("x-ratelimit-remaining") == "0")
+            if limited and attempt < retries:
+                time.sleep(self._wait_seconds(resp, attempt))
                 continue
+            if limited:
+                raise CollectorError(f"{self.label}: limite de requisições excedido em {url}")
             if resp.status_code >= 400:
                 raise CollectorError(f"{self.label}: HTTP {resp.status_code} em {url}")
-            try:
-                return resp.json()
-            except ValueError as exc:
-                raise CollectorError(f"{self.label}: resposta não é JSON em {url}") from exc
+            return resp
         raise CollectorError(f"{self.label}: limite de requisições excedido em {url}")
+
+    @staticmethod
+    def _wait_seconds(resp: httpx.Response, attempt: int) -> float:
+        retry_after = resp.headers.get("retry-after", "")
+        if retry_after.replace(".", "", 1).isdigit():
+            return min(float(retry_after), 60)
+        reset = resp.headers.get("x-ratelimit-reset", "")
+        if reset.isdigit():
+            return min(max(int(reset) - time.time(), 1), 60)
+        return min(2 ** (attempt + 1), 60)
+
+    def get_json(self, url: str, *, not_found_value=None, method: str = "GET", **kwargs):
+        resp = self.request(method, url, **kwargs)
+        if resp is None:
+            return not_found_value
+        try:
+            return resp.json()
+        except ValueError as exc:
+            raise CollectorError(f"{self.label}: resposta não é JSON em {url}") from exc
+
+    def get_text(self, url: str, **kwargs) -> str:
+        resp = self.request("GET", url, **kwargs)
+        return resp.text if resp is not None else ""

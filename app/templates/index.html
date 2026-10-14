@@ -46,11 +46,9 @@
   {% for c in collectors %}
     <li><span class="dot {{ 'on' if c.enabled else 'off' }}"></span>
       <strong>{{ c.label }}</strong> — {{ c.description }}
-      {% if not c.enabled %}<span class="muted">({{ c.reason }})</span>{% endif %}</li>
+      {% if not c.enabled %}<span class="muted">({{ c.reason }})</span>
+      {% elif c.note %}<span class="muted">({{ c.note }})</span>{% endif %}</li>
   {% endfor %}
   </ul>
-  <p class="muted">Have I Been Pwned:
-    {% if hibp_key %}chave configurada — busca por domínio verificado e por e-mail ativas.
-    {% else %}sem chave — apenas o catálogo público de incidentes.{% endif %}</p>
 </section>
 {% endblock %}

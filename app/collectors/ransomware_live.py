@@ -10,28 +10,10 @@ classificamos a correspondência:
 from urllib.parse import quote
 
 from .base import Collector, FindingData
+from .matching import brand_keyword, first_value, search_term, victim_match  # noqa: F401
 
 API = "https://api.ransomware.live/v2"
 SITE = "https://www.ransomware.live"
-
-# Segundo nível comum em TLDs de país (empresa.com.br, empresa.co.uk ...)
-_SECOND_LEVEL = {"com", "net", "org", "gov", "edu", "co", "ind", "adv", "eng", "med", "art", "ac"}
-MIN_KEYWORD_LEN = 4
-
-
-def brand_keyword(domain: str) -> str:
-    parts = domain.lower().strip(".").split(".")
-    if len(parts) >= 3 and parts[-2] in _SECOND_LEVEL:
-        return parts[-3]
-    return parts[-2] if len(parts) >= 2 else parts[0]
-
-
-def _first(v: dict, *keys) -> str:
-    for k in keys:
-        val = v.get(k)
-        if val:
-            return str(val)
-    return ""
 
 
 class RansomwareLiveCollector(Collector):
@@ -41,9 +23,7 @@ class RansomwareLiveCollector(Collector):
 
     def collect_domain(self, domain: str) -> list[FindingData]:
         domain = domain.lower()
-        keyword = brand_keyword(domain)
-        if len(keyword) < MIN_KEYWORD_LEN:
-            keyword = domain
+        keyword = search_term(domain)
         data = self.get_json(f"{API}/searchvictims/{quote(keyword)}", not_found_value=[])
         if isinstance(data, dict):
             data = data.get("victims") or data.get("data") or []
@@ -52,28 +32,24 @@ class RansomwareLiveCollector(Collector):
         for v in data or []:
             if not isinstance(v, dict):
                 continue
-            victim = _first(v, "victim", "post_title", "name")
-            group = _first(v, "group", "group_name")
-            date = _first(v, "attackdate", "discovered", "published")[:10]
-            website = _first(v, "domain", "website")
-            haystack = f"{victim} {website}".lower()
-
-            if domain in haystack:
-                severity, match = "critica", "Correspondência forte (domínio completo)"
-            elif keyword in haystack:
-                severity, match = "media", "Possível correspondência (somente o nome) — validar manualmente"
-            else:
+            victim = first_value(v, "victim", "post_title", "name")
+            group = first_value(v, "group", "group_name")
+            date = first_value(v, "attackdate", "discovered", "published")[:10]
+            website = first_value(v, "domain", "website")
+            matched = victim_match(domain, victim, website)
+            if not matched:
                 continue
+            severity, match = matched
 
             detail = f"{match}. Grupo: {group or 'desconhecido'}."
             if website:
                 detail += f" Site informado: {website}."
             if v.get("country"):
                 detail += f" País: {v['country']}."
-            desc = _first(v, "description")
+            desc = first_value(v, "description")
             if desc:
                 detail += f" Descrição publicada: {desc[:400]}"
-            post = _first(v, "url", "post_url")
+            post = first_value(v, "url", "post_url")
             if post:
                 detail += f" Endereço da publicação (rede Tor, não acessar da rede corporativa): {post}"
 
@@ -84,7 +60,7 @@ class RansomwareLiveCollector(Collector):
                 asset=domain,
                 title=f"{victim or website} listado pelo grupo {group or 'desconhecido'}",
                 detail=detail,
-                reference_url=_first(v, "permalink") or SITE,
+                reference_url=first_value(v, "permalink") or SITE,
                 event_date=date,
                 fingerprint=f"rl:{group.lower()}:{victim.lower()}:{date}",
             ))

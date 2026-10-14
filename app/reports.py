@@ -21,6 +21,20 @@ RECOMMENDATIONS = {
         "Orientar os usuários a não reutilizar a senha corporativa em serviços pessoais.",
         "Monitorar tentativas de login com essas contas (credential stuffing).",
     ],
+    "dark_web": [
+        "Analisar o contexto da menção em ambiente isolado (máquina virtual, fora da rede corporativa).",
+        "Se houver indício de venda ou vazamento de dados, tratar como incidente e preservar evidências.",
+    ],
+    "codigo_exposto": [
+        "Revogar e substituir imediatamente qualquer credencial, token ou chave encontrada.",
+        "Pedir a remoção do conteúdo ao dono do repositório ou ao GitHub; apagar o arquivo não remove o histórico.",
+        "Adotar varredura de segredos (ex.: gitleaks) nos repositórios e pipelines do cliente.",
+    ],
+    "ioc": [
+        "Verificar se servidores do domínio foram comprometidos (web shells, arquivos alterados, contas novas).",
+        "Remover o conteúdo malicioso e corrigir a vulnerabilidade explorada.",
+        "Solicitar a remoção do domínio das listas após a limpeza, para evitar bloqueios de reputação.",
+    ],
     "incidente_proprio": [
         "Confirmar se o incidente já foi tratado e comunicado.",
         "Garantir que as senhas dos usuários afetados foram redefinidas.",
@@ -36,6 +50,12 @@ SOURCES = [
     ("Have I Been Pwned", "Catálogo de vazamentos de dados públicos e busca por domínio verificado."),
     ("ransomware.live", "Monitoramento de sites de vazamento mantidos por grupos de ransomware."),
     ("Hudson Rock (OSINT)", "Base de computadores infectados por malware do tipo infostealer."),
+    ("RansomLook", "Segunda base de sites de vazamento de ransomware, com outros grupos monitorados."),
+    ("Ahmia", "Buscador de páginas da rede Tor (.onion)."),
+    ("GitHub + gitleaks", "Busca de código público que menciona o domínio e detecção de segredos."),
+    ("abuse.ch (URLhaus e ThreatFox)", "Bases de URLs maliciosas e indicadores de ameaça."),
+    ("AlienVault OTX", "Relatórios de ameaças compartilhados pela comunidade."),
+    ("crt.sh", "Logs públicos de certificados TLS (Certificate Transparency)."),
     ("dnstwist", "Geração de variações do domínio e verificação de registro no DNS."),
 ]
 

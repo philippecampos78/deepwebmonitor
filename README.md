@@ -9,8 +9,31 @@ públicas de inteligência de ameaças e gerar relatórios.
 |---|---|---|
 | **Have I Been Pwned** | Se o próprio site do cliente já sofreu vazamento (catálogo público). Com a chave do plano já contratado: e-mails vazados de domínios verificados no painel e e-mails monitorados. | Não (opcional) |
 | **ransomware.live** | Cliente listado em site de vazamento de grupo de ransomware. | Não |
+| **RansomLook** | Idem, segunda base (outros grupos). Lê os últimos `RANSOMLOOK_DAYS` dias. | Não |
 | **Hudson Rock (OSINT)** | Funcionários/usuários com credenciais roubadas por malware infostealer. | Não |
+| **Ahmia** | Menções ao domínio em sites .onion indexados (sem acessar a rede Tor). | Não |
+| **GitHub + gitleaks** | Senhas, tokens e chaves expostos em repositórios públicos que citam o domínio. | Token gratuito do GitHub |
+| **abuse.ch (URLhaus e ThreatFox)** | Site do cliente distribuindo malware ou usado como infraestrutura de ataque. | Chave gratuita |
+| **AlienVault OTX** | Domínio citado em relatórios de ameaças da comunidade. | Não (opcional) |
+| **crt.sh** | Certificados recém-emitidos para domínios com o nome do cliente (sites falsos). | Não |
 | **dnstwist** | Domínios parecidos registrados (phishing / typosquatting). Roda localmente. | Não |
+
+### Chaves gratuitas (opcionais)
+
+Coloque no `.env`. Fontes sem chave aparecem desativadas no painel.
+
+- **GITHUB_TOKEN**: em https://github.com/settings/personal-access-tokens crie um
+  token *fine-grained* com acesso "Public repositories (read-only)" e nenhuma permissão extra.
+- **ABUSECH_AUTH_KEY**: em https://auth.abuse.ch/ (login com GitHub, Google ou LinkedIn).
+- **OTX_API_KEY**: em https://otx.alienvault.com, menu *Settings* > *API Key*.
+
+### gitleaks (opcional, recomendado)
+
+Sem o gitleaks, o GitHub usa regras internas mais simples. Para instalar no Windows:
+baixe o arquivo `gitleaks_..._windows_x64.zip` em
+https://github.com/gitleaks/gitleaks/releases, extraia o `gitleaks.exe` (por exemplo
+em `C:\Ferramentas\`) e informe o caminho em `GITLEAKS_PATH` no `.env`. O painel
+mostra se ele foi encontrado.
 
 Cada fonte é um "coletor" em `app/collectors/`. Para adicionar uma fonte nova,
 crie uma classe que herda de `Collector` e inclua em `app/collectors/__init__.py`.

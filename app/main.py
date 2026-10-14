@@ -99,7 +99,7 @@ def collectors_status():
     for cls in COLLECTOR_CLASSES:
         c = cls(http=None)
         out.append({"label": c.label, "description": c.description,
-                    "enabled": c.enabled(), "reason": c.disabled_reason()})
+                    "enabled": c.enabled(), "reason": c.disabled_reason(), "note": c.status_note()})
     return out
 
 
@@ -112,8 +112,7 @@ def index(request: Request, msg: str = "", db: Session = Depends(get_db)):
         rows.append({"client": c, "sev": sev, "total": len(c.findings),
                      "last_scan": c.scans[0] if c.scans else None})
     return templates.TemplateResponse(request, "index.html", {
-        "rows": rows, "msg": msg, "collectors": collectors_status(),
-        "hibp_key": bool(settings.hibp_api_key), "severities": SEVERITIES,
+        "rows": rows, "msg": msg, "collectors": collectors_status(), "severities": SEVERITIES,
     })
 
 

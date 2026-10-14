@@ -49,6 +49,11 @@ class HIBPCollector(Collector):
         self._catalog: dict[str, dict] | None = None
         self._verified: set[str] | None = None
 
+    def status_note(self) -> str:
+        if self.api_key:
+            return "chave configurada: busca por domínio verificado e por e-mail ativas"
+        return "sem chave: apenas o catálogo público de incidentes"
+
     def _headers(self, auth: bool = False) -> dict:
         h = {"user-agent": settings.hibp_user_agent}
         if auth:

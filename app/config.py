@@ -25,6 +25,12 @@ class Settings:
     hibp_api_key: str = os.getenv("HIBP_API_KEY", "")
     hibp_user_agent: str = os.getenv("HIBP_USER_AGENT", "DeepWebMonitor-SOC")
     dnstwist_enabled: bool = _bool(os.getenv("DNSTWIST_ENABLED"), True)
+    github_token: str = os.getenv("GITHUB_TOKEN", "")
+    gitleaks_path: str = os.getenv("GITLEAKS_PATH", "gitleaks")
+    otx_api_key: str = os.getenv("OTX_API_KEY", "")
+    abusech_auth_key: str = os.getenv("ABUSECH_AUTH_KEY", "")
+    ransomlook_days: int = int(os.getenv("RANSOMLOOK_DAYS", "90"))
+    crtsh_days: int = int(os.getenv("CRTSH_DAYS", "90"))
     database_url: str = os.getenv("DATABASE_URL", "sqlite:///data/deepwebmonitor.db")
     http_timeout: float = float(os.getenv("HTTP_TIMEOUT", "30"))
 
