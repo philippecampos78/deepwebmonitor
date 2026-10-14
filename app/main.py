@@ -149,6 +149,8 @@ def client_detail(request: Request, client_id: int, msg: str = "", db: Session =
     return templates.TemplateResponse(request, "client.html", {
         "client": client, "findings": findings, "msg": msg, "running": running,
         "scans": client.scans[:10], "sources": collectors_status(), "selected": selected_sources(client),
+        # Crescente = da menos grave para a mais grave
+        "severity_rank": {s: len(SEVERITIES) - i for i, s in enumerate(SEVERITIES)},
     })
 
 

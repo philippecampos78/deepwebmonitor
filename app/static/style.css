@@ -174,6 +174,16 @@ details summary { cursor: pointer; padding: .55rem 0; color: var(--text); }
 .dot.on { background: var(--ok); box-shadow: 0 0 0 3px rgba(79, 208, 138, .18); }
 .dot.off { background: var(--border-2); }
 
+/* Tabelas ordenáveis */
+.sort-btn { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: .35rem;
+  font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; }
+.sort-btn:hover, th[aria-sort="ascending"] .sort-btn, th[aria-sort="descending"] .sort-btn { color: var(--text); }
+.sort-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+.sort-btn i { width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; opacity: .35;
+  border-top: 5px solid currentColor; }
+th[aria-sort="ascending"] .sort-btn i { border-top: 0; border-bottom: 5px solid var(--accent); opacity: 1; }
+th[aria-sort="descending"] .sort-btn i { border-top-color: var(--accent); opacity: 1; }
+
 /* Escolha de fontes da varredura */
 .sources-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: .9rem; }
 .picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .6rem; }

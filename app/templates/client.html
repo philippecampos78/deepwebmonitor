@@ -87,17 +87,23 @@
 <section class="card card-scroll">
   <span class="eyebrow">Achados</span>
   {% if findings %}
-  <table>
-    <thead><tr><th>Gravidade</th><th>Categoria</th><th>Achado</th><th>Data do evento</th><th>Visto pela 1ª vez</th></tr></thead>
+  <table data-sortable id="achados">
+    <thead><tr>
+      <th data-sort-type="num" aria-sort="descending">Gravidade</th>
+      <th data-sort-type="text">Categoria</th>
+      <th data-sort-type="text">Achado</th>
+      <th data-sort-type="text">Data do evento</th>
+      <th data-sort-type="text">Visto pela 1ª vez</th>
+    </tr></thead>
     <tbody>
     {% for f in findings %}
       <tr>
-        <td><span class="badge sev-{{ f.severity }}">{{ f.severity_label }}</span></td>
+        <td data-sort="{{ severity_rank[f.severity] }}"><span class="badge sev-{{ f.severity }}">{{ f.severity_label }}</span></td>
         <td>{{ f.category_label }}</td>
-        <td><strong>{{ f.title }}</strong><div class="detail">{{ f.detail }}</div>
+        <td data-sort="{{ f.title }}"><strong>{{ f.title }}</strong><div class="detail">{{ f.detail }}</div>
           {% if f.reference_url | is_http %}<a class="detail" href="{{ f.reference_url }}" target="_blank" rel="noopener noreferrer">ver na fonte ↗</a>{% endif %}</td>
-        <td class="nowrap">{{ f.event_date or '—' }}</td>
-        <td class="nowrap">{{ f.first_seen | dt }}</td>
+        <td class="nowrap" data-sort="{{ f.event_date }}">{{ f.event_date or '—' }}</td>
+        <td class="nowrap" data-sort="{{ f.first_seen.isoformat() }}">{{ f.first_seen | dt }}</td>
       </tr>
     {% endfor %}
     </tbody>
@@ -121,6 +127,7 @@
       onsubmit='return confirm({{ ("Excluir " ~ client.name ~ " e todos os achados?") | tojson }});'>
   <button class="link danger">Excluir cliente</button>
 </form>
+<script src="{{ url_for('static', path='js/table-sort.js') }}"></script>
 <script>
 (() => {
   const boxes = [...document.querySelectorAll('#scan-form input[name=fontes]:not(:disabled)')];
