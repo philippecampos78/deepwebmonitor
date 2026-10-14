@@ -6,6 +6,7 @@ logs de Certificate Transparency, então isso funciona como alerta antecipado.
 Nomes dentro do próprio domínio do cliente são ignorados.
 """
 
+import re
 from datetime import datetime, timedelta
 
 from ..config import settings
@@ -18,6 +19,22 @@ MAX_FINDINGS = 100
 PHISHING_WORDS = ("login", "logon", "signin", "secure", "seguro", "conta", "acesso", "portal",
                   "webmail", "mail", "sso", "auth", "verify", "verifica", "pagamento", "boleto",
                   "pix", "suporte", "support", "rh", "vpn", "office", "microsoft", "update")
+
+
+_HOSTNAME = re.compile(r"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$")
+
+
+def looks_suspicious(name: str, domain: str) -> bool:
+    """Nome contém o domínio do cliente ou uma palavra típica de phishing.
+
+    Compara palavra a palavra (separadas por "." e "-") para evitar falsos
+    positivos como "sso" dentro de "ericsson". Palavras longas também valem
+    como parte de uma palavra (ex.: "empresalogin").
+    """
+    if re.search(rf"(^|[.-]){re.escape(domain)}($|[.-])", name):
+        return True
+    tokens = re.split(r"[.-]", name)
+    return any(t == w or (len(w) >= 5 and w in t) for t in tokens for w in PHISHING_WORDS)
 
 
 def _parse_date(value: str) -> datetime | None:
@@ -39,12 +56,16 @@ class CrtShCollector(Collector):
     def collect_domain(self, domain: str) -> list[FindingData]:
         domain = domain.lower()
         term = search_term(domain)
-        try:
-            data = self.get_json(API, params={"q": f"%{term}%", "output": "json", "exclude": "expired",
-                                              "deduplicate": "Y"}, not_found_value=[], timeout=120)
-        except CollectorError as exc:
-            raise CollectorError(f"{exc} — o crt.sh costuma ficar sobrecarregado; tente mais tarde.") from exc
+        params = {"q": f"%{term}%", "output": "json", "exclude": "expired", "deduplicate": "Y"}
+        for attempt in range(2):  # o crt.sh falha com frequência; uma segunda tentativa costuma resolver
+            try:
+                data = self.get_json(API, params=params, not_found_value=[], timeout=150)
+                break
+            except CollectorError as exc:
+                if attempt:
+                    raise CollectorError(f"{exc} — o crt.sh costuma ficar sobrecarregado; tente mais tarde.") from exc
 
+        own = self.client_domains | {domain}
         cutoff = utcnow() - timedelta(days=self.days)
         seen: dict[str, dict] = {}
         for cert in data or []:
@@ -55,8 +76,8 @@ class CrtShCollector(Collector):
                 continue
             for raw in str(cert.get("name_value", "")).splitlines():
                 name = raw.strip().lower().removeprefix("*.")
-                if (not name or term not in name or name == domain or name.endswith("." + domain)
-                        or "@" in name):
+                if (not _HOSTNAME.match(name) or term not in name
+                        or any(name == d or name.endswith("." + d) for d in own)):
                     continue
                 prev = seen.get(name)
                 if not prev or issued > prev["issued"]:
@@ -64,7 +85,7 @@ class CrtShCollector(Collector):
 
         findings = []
         for name, info in sorted(seen.items(), key=lambda kv: kv[1]["issued"], reverse=True)[:MAX_FINDINGS]:
-            suspicious = domain in name or any(w in name for w in PHISHING_WORDS)
+            suspicious = looks_suspicious(name, domain)
             detail = f"Certificado emitido em {info['issued']:%d/%m/%Y}"
             if info["issuer"]:
                 detail += f" por {info['issuer']}"

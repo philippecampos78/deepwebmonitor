@@ -39,6 +39,8 @@ class Collector:
 
     def __init__(self, http: httpx.Client):
         self.http = http
+        # Todos os domínios do cliente em varredura (o scanner preenche).
+        self.client_domains: set[str] = set()
 
     def enabled(self) -> bool:
         return True
@@ -49,6 +51,11 @@ class Collector:
     def status_note(self) -> str:
         """Observação exibida no painel (ex.: chave opcional ausente)."""
         return ""
+
+    def supports(self, kind: str) -> bool:
+        """A fonte consulta esse tipo de item ("domain" ou "email")?"""
+        method = "collect_domain" if kind == "domain" else "collect_email"
+        return getattr(type(self), method) is not getattr(Collector, method)
 
     def collect_domain(self, domain: str) -> list[FindingData]:
         return []
@@ -79,9 +86,19 @@ class Collector:
             if limited:
                 raise CollectorError(f"{self.label}: limite de requisições excedido em {url}")
             if resp.status_code >= 400:
-                raise CollectorError(f"{self.label}: HTTP {resp.status_code} em {url}")
+                raise CollectorError(f"{self.label}: HTTP {resp.status_code} em {url}{self._reason(resp)}")
             return resp
         raise CollectorError(f"{self.label}: limite de requisições excedido em {url}")
+
+    @staticmethod
+    def _reason(resp: httpx.Response) -> str:
+        """Motivo do erro informado pela fonte, quando houver (ex.: chave inválida)."""
+        try:
+            body = resp.json()
+        except ValueError:
+            return ""
+        msg = (body.get("message") or body.get("error") or "") if isinstance(body, dict) else ""
+        return f" ({str(msg)[:200]})" if msg else ""
 
     @staticmethod
     def _wait_seconds(resp: httpx.Response, attempt: int) -> float:

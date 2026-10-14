@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from .base import Collector, FindingData
 
 SITE = "https://ahmia.fi"
+MAX_FINDINGS = 50
 LEAK_WORDS = ("leak", "dump", "database", "breach", "vazamento", "vazado", "credential", "combo",
               "password", "senha", "ransom", "hacked", "stealer", "logs", "sell", "venda")
 
@@ -35,19 +36,35 @@ def _hidden_fields(page: str) -> dict:
     return fields
 
 
+_MONTHS = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6, "jul": 7, "aug": 8,
+           "sep": 9, "oct": 10, "nov": 11, "dec": 12}
+
+
+def _last_seen(value: str) -> str:
+    """Aceita timestamp numérico ou o formato do site ("Oct. 1, 2026, 1:53 a.m.")."""
+    if value.isdigit():
+        return datetime.fromtimestamp(int(value), tz=timezone.utc).strftime("%Y-%m-%d")
+    m = re.match(r"\s*([A-Za-z]{3})[a-z]*\.?\s+(\d{1,2}),\s*(\d{4})", value)
+    if m and m.group(1).lower() in _MONTHS:
+        return f"{m.group(3)}-{_MONTHS[m.group(1).lower()]:02d}-{int(m.group(2)):02d}"
+    return ""
+
+
 def parse_results(page: str) -> list[dict]:
     results = []
     for block in _RESULT.findall(page):
         title = re.search(r"<h4[^>]*>(.*?)</h4>", block, re.S | re.I)
         desc = re.search(r"<p[^>]*>(.*?)</p>", block, re.S | re.I)
         onion = _ONION.search(block)
-        ts = re.search(r'data-timestamp="(\d+)"', block)
+        ts = re.search(r'data-timestamp="([^"]*)"', block)
+        description = _text(desc.group(1)) if desc else ""
+        if description.lower() == "no description provided":
+            description = ""
         results.append({
             "title": _text(title.group(1)) if title else "",
-            "description": _text(desc.group(1)) if desc else "",
+            "description": description,
             "onion": onion.group(0).lower() if onion else "",
-            "last_seen": (datetime.fromtimestamp(int(ts.group(1)), tz=timezone.utc).strftime("%Y-%m-%d")
-                          if ts else ""),
+            "last_seen": _last_seen(ts.group(1)) if ts else "",
         })
     return results
 
@@ -69,6 +86,8 @@ class AhmiaCollector(Collector):
 
         findings = []
         for r in parse_results(page):
+            if len(findings) >= MAX_FINDINGS:
+                break
             text = f"{r['title']} {r['description']}".lower()
             if domain not in text:
                 continue  # o buscador às vezes devolve resultados aproximados

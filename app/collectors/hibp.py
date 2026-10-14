@@ -30,6 +30,23 @@ DATA_CLASSES_PT = {
     "Security questions and answers": "perguntas de segurança",
     "Auth tokens": "tokens de autenticação",
     "Job titles": "cargos",
+    "Password hints": "dicas de senha",
+    "Geographic locations": "localizações",
+    "Social media profiles": "perfis em redes sociais",
+    "Device information": "informações do dispositivo",
+    "Browser user agent details": "dados do navegador",
+    "Purchases": "compras",
+    "Website activity": "atividade no site",
+    "Education levels": "escolaridade",
+    "Salutations": "pronomes de tratamento",
+    "Spoken languages": "idiomas",
+    "Time zones": "fusos horários",
+    "Marital statuses": "estado civil",
+    "Passport numbers": "números de passaporte",
+    "Income levels": "faixa de renda",
+    "Payment histories": "histórico de pagamentos",
+    "Private messages": "mensagens privadas",
+    "Credit card CVV": "CVV de cartão",
     "Employers": "empregadores",
 }
 
@@ -136,6 +153,9 @@ class HIBPCollector(Collector):
             for breach_name in breaches:
                 findings.append(self._account_finding(f"{alias}@{domain}", breach_name))
         return findings
+
+    def supports(self, kind: str) -> bool:
+        return kind == "domain" or bool(self.api_key)  # e-mail só com a chave do plano
 
     def collect_email(self, email: str) -> list[FindingData]:
         if not self.api_key:

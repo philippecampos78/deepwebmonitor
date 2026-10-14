@@ -2,12 +2,10 @@
 
 import threading
 
-import httpx
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .collectors import Collector, CollectorError, FindingData, build_collectors
-from .config import settings
+from .collectors import Collector, CollectorError, FindingData, build_collectors, make_http_client
 from .models import Client, Finding, ScanRun, utcnow
 
 # Uma varredura por vez: algumas fontes têm limite de requisições e o dnstwist
@@ -51,15 +49,20 @@ def run_scan(db: Session, client_id: int, scan_id: int,
     with _scan_lock:
         http = None
         if collectors is None:
-            http = httpx.Client(timeout=settings.http_timeout, follow_redirects=True)
+            http = make_http_client()
             collectors = build_collectors(http)
         try:
+            client_domains = {d.name.lower() for d in client.domains}
             for c in collectors:
+                c.client_domains = client_domains
                 if not c.enabled():
                     write_log(f"[{c.label}] ignorado: {c.disabled_reason()}")
                     continue
-                targets = [("domínio", d.name, c.collect_domain) for d in client.domains]
-                targets += [("e-mail", e.address, c.collect_email) for e in client.emails]
+                targets = []
+                if c.supports("domain"):
+                    targets += [("domínio", d.name, c.collect_domain) for d in client.domains]
+                if c.supports("email"):
+                    targets += [("e-mail", e.address, c.collect_email) for e in client.emails]
                 for kind, value, fn in targets:
                     try:
                         items = fn(value)
@@ -70,8 +73,8 @@ def run_scan(db: Session, client_id: int, scan_id: int,
                         items, status = [], f" — erro inesperado: {exc.__class__.__name__}: {exc}"
                     new = save_findings(db, client, items)
                     scan.new_findings += new
-                    if items or status:
-                        write_log(f"[{c.label}] {kind} {value}: {len(items)} achado(s), {new} novo(s){status}")
+                    result = f"{len(items)} achado(s), {new} novo(s)" if items else "nenhum achado"
+                    write_log(f"[{c.label}] {kind} {value}: {result}{status}")
             scan.status = "concluida"
         except Exception as exc:
             scan.status = "falhou"

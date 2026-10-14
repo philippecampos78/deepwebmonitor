@@ -170,3 +170,31 @@ def test_threatfox_match():
 def test_builtin_rule_variable_names():
     hits = builtin_scan('SMTP_PASSWORD = "Sup3rS3nha!"\n"db.password": "outraSenha1"\nsenha_admin="abc"\n')
     assert [h["secret"] for h in hits] == ["Sup3rS3nha!", "outraSenha1"]
+
+
+def test_crtsh_suspicious_words_are_whole_tokens():
+    from app.collectors.crtsh import looks_suspicious
+    assert not looks_suspicious("app.ericssonnikolatesla.com", "tesla.com")
+    assert looks_suspicious("tesla-sso.net", "tesla.com")
+    assert looks_suspicious("teslalogin.com", "tesla.com")
+    assert looks_suspicious("tesla.com.verify-account.xyz", "tesla.com")
+
+
+def test_ahmia_text_dates():
+    from app.collectors.ahmia import _last_seen
+    assert _last_seen("Oct. 1, 2026, 1:53 a.m.") == "2026-10-01"
+    assert _last_seen("Sept. 30, 2026, noon") == "2026-09-30"
+    assert _last_seen("May 5, 2026") == "2026-05-05"
+
+
+def test_http_client_has_own_user_agent():
+    from app.collectors import make_http_client
+    assert "python-httpx" not in make_http_client().headers["User-Agent"]
+
+
+def test_crtsh_ignores_other_client_domains():
+    recent = (utcnow() - timedelta(days=1)).isoformat()
+    c = CrtShCollector(http_for({"https://crt.sh/": (200, [
+        {"id": 1, "name_value": "auth.empresa.cn\nempresa-login.com", "not_before": recent}])}), days=30)
+    c.client_domains = {"empresa.com.br", "empresa.cn"}
+    assert [f.title.split(": ")[1] for f in c.collect_domain("empresa.com.br")] == ["empresa-login.com"]

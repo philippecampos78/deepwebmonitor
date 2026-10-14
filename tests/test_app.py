@@ -11,6 +11,7 @@ from sqlalchemy.orm import sessionmaker  # noqa: E402
 from sqlalchemy.pool import StaticPool  # noqa: E402
 
 from app import db as dbmod  # noqa: E402
+from app.collectors.base import Collector  # noqa: E402
 from app.collectors.hibp import HIBPCollector  # noqa: E402
 from app.collectors.hudsonrock import HudsonRockCollector  # noqa: E402
 from app.collectors.lookalike import LookalikeCollector  # noqa: E402
@@ -127,10 +128,11 @@ def test_lookalike():
     assert [(f.title.split(": ")[1], f.severity) for f in found] == [("empesa.com.br", "alta"), ("empresa.net", "media")]
 
 
-class FakeCollector:
+class FakeCollector(Collector):
     name, label = "fake", "Fake"
 
     def __init__(self):
+        super().__init__(None)
         self.calls = 0
 
     def enabled(self):
@@ -193,3 +195,12 @@ def test_web_flow():
         r = tc.get(f"/clients/{cid}/report")
         assert r.status_code == 200 and "Resumo executivo" in r.text
         assert tc.get("/").status_code == 200
+
+
+def test_supports_only_implemented_kinds():
+    from app.collectors.ransomware_live import RansomwareLiveCollector
+    assert RansomwareLiveCollector(None).supports("domain")
+    assert not RansomwareLiveCollector(None).supports("email")
+    assert HudsonRockCollector(None).supports("email")
+    assert not HIBPCollector(None, api_key="").supports("email")
+    assert HIBPCollector(None, api_key="k").supports("email")

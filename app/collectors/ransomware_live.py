@@ -49,9 +49,10 @@ class RansomwareLiveCollector(Collector):
             desc = first_value(v, "description")
             if desc:
                 detail += f" Descrição publicada: {desc[:400]}"
-            post = first_value(v, "url", "post_url")
-            if post:
-                detail += f" Endereço da publicação (rede Tor, não acessar da rede corporativa): {post}"
+            claim = first_value(v, "claim_url", "post_url")
+            if ".onion" in claim:
+                detail += f" Endereço da publicação (rede Tor, não acessar da rede corporativa): {claim}"
+            permalink = first_value(v, "url", "permalink")
 
             findings.append(FindingData(
                 source=self.name,
@@ -60,7 +61,7 @@ class RansomwareLiveCollector(Collector):
                 asset=domain,
                 title=f"{victim or website} listado pelo grupo {group or 'desconhecido'}",
                 detail=detail,
-                reference_url=first_value(v, "permalink") or SITE,
+                reference_url=permalink if permalink.startswith(SITE) else SITE,
                 event_date=date,
                 fingerprint=f"rl:{group.lower()}:{victim.lower()}:{date}",
             ))

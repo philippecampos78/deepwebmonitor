@@ -20,6 +20,25 @@ def _families(data: dict) -> str:
     return ", ".join(f"{k} ({v})" for k, v in items[:5])
 
 
+_EMPTY = {"", "not found", "none", "null", "n/a"}
+
+
+def _filled(value) -> bool:
+    if isinstance(value, list):
+        return any(_filled(v) for v in value)
+    return str(value).strip().lower() not in _EMPTY
+
+
+def _password_strength(stats) -> str:
+    """Resumo da força das senhas roubadas (a API devolve só estatísticas, não as senhas)."""
+    if not isinstance(stats, dict) or not stats.get("totalPass"):
+        return ""
+    labels = [("too_weak", "muito fracas"), ("weak", "fracas"), ("medium", "médias"), ("strong", "fortes")]
+    parts = [f"{stats[k]['perc']}% {label}" for k, label in labels
+             if isinstance(stats.get(k), dict) and stats[k].get("perc") is not None]
+    return f"{stats['totalPass']} senhas analisadas: " + ", ".join(parts) if parts else ""
+
+
 def _urls(entries) -> str:
     out = []
     for e in (entries or [])[:10]:
@@ -44,13 +63,13 @@ class HudsonRockCollector(Collector):
 
         groups = [
             ("employees", "critica", "funcionário(s)", "last_employee_compromised", "employees_urls",
-             "Computadores de funcionários infectados com credenciais corporativas de"),
+             "Computadores de funcionários infectados com credenciais corporativas de", "employeePasswords"),
             ("users", "media", "usuário(s)/cliente(s)", "last_user_compromised", "clients_urls",
-             "Usuários dos serviços de"),
+             "Usuários dos serviços de", "userPasswords"),
             ("third_parties", "baixa", "terceiro(s)", "", "",
-             "Terceiros com credenciais ligadas a"),
+             "Terceiros com credenciais ligadas a", ""),
         ]
-        for key, severity, who, last_key, urls_key, phrase in groups:
+        for key, severity, who, last_key, urls_key, phrase, pass_key in groups:
             count = data.get(key) or 0
             if not isinstance(count, int) or count <= 0:
                 continue
@@ -62,6 +81,9 @@ class HudsonRockCollector(Collector):
                 detail += f" Serviços afetados: {_urls(urls.get(urls_key))}."
             if families:
                 detail += f" Famílias de malware: {families}."
+            strength = _password_strength(data.get(pass_key)) if pass_key else ""
+            if strength:
+                detail += f" Força das senhas roubadas: {strength}."
             findings.append(FindingData(
                 source=self.name,
                 category="infostealer",
@@ -83,16 +105,16 @@ class HudsonRockCollector(Collector):
             if not isinstance(s, dict):
                 continue
             date = str(s.get("date_compromised") or "")[:10]
-            computer = str(s.get("computer_name") or "")
+            computer = str(s.get("computer_name") or "") if _filled(s.get("computer_name")) else ""
             parts = [f"Data da infecção: {date or 'desconhecida'}"]
             for label, key in [("Malware", "stealer_family"), ("Computador", "computer_name"),
                                ("Sistema", "operating_system"), ("Caminho do malware", "malware_path"),
                                ("IP", "ip")]:
-                if s.get(key):
+                if s.get(key) and _filled(s[key]):
                     parts.append(f"{label}: {s[key]}")
-            if s.get("antiviruses"):
-                av = s["antiviruses"]
-                parts.append("Antivírus: " + (", ".join(av) if isinstance(av, list) else str(av)))
+            av = s.get("antiviruses")
+            if av and _filled(av):
+                parts.append("Antivírus: " + (", ".join(a for a in av if _filled(a)) if isinstance(av, list) else str(av)))
             if s.get("total_corporate_services") is not None:
                 parts.append(f"Serviços corporativos com credencial roubada: {s['total_corporate_services']}")
             if s.get("total_user_services") is not None:
@@ -106,6 +128,6 @@ class HudsonRockCollector(Collector):
                 detail=". ".join(parts) + ".",
                 reference_url=SITE,
                 event_date=date,
-                fingerprint=f"hr:email:{email.lower()}:{date}:{computer.lower()}",
+                fingerprint=f"hr:email:{email.lower()}:{date}:{computer.lower()}:{s.get('ip', '')}",
             ))
         return findings
