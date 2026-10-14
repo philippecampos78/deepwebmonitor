@@ -20,7 +20,7 @@ from .config import settings
 from .models import CATEGORY_LABELS, SEVERITIES, SEVERITY_LABELS, Client, Domain, MonitoredEmail, ScanRun
 from .collectors import make_http_client
 from .pwned import PwnedCheckError, pwned_count
-from .reports import build_report
+from .reports import build_report, public_text
 from .scanner import run_scan
 
 APP_DIR = Path(__file__).resolve().parent
@@ -129,6 +129,8 @@ def fmt_dt(value):
 
 
 templates.env.filters["dt"] = fmt_dt
+# Relatório do cliente: textos sem nomes das ferramentas de coleta
+templates.env.filters["publico"] = public_text
 # A logo precisa ser clareada por CSS no fundo escuro? (só quando não há versão branca)
 templates.env.globals["logo_needs_filter"] = lambda: logo_for("escuro")[1]
 # Links vêm de fontes externas: só exibe http(s), nunca "javascript:" etc.

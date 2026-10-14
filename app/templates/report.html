@@ -58,7 +58,7 @@
         <ul class="list">
           <li>Domínios <span class="muted">{{ client.domains | length }}</span></li>
           <li>E-mails prioritários <span class="muted">{{ client.emails | length }}</span></li>
-          <li>Fontes de inteligência consultadas <span class="muted">{{ sources | length }}</span></li>
+          <li>Categorias de exposição analisadas <span class="muted">{{ method_scope | length }}</span></li>
         </ul>
       </div>
       <div class="card hi">
@@ -90,7 +90,7 @@
             <td><span class="badge sev-{{ f.severity }}">{{ f.severity_label }}</span>
               {% if f.id in new_ids %}<br><span class="badge new">Novo</span>{% endif %}</td>
             <td>{{ f.asset }}</td>
-            <td><strong>{{ f.title }}</strong><div class="detail">{{ f.detail }}</div></td>
+            <td><strong>{{ f.title | publico }}</strong><div class="detail">{{ f.detail | publico }}</div></td>
             <td class="nowrap">{{ f.event_date or '—' }}</td>
           </tr>
         {% endfor %}
@@ -100,7 +100,7 @@
     {% if s.recommendations %}
     <div class="recommend">
       <span class="eyebrow">Recomendações</span>
-      <ul>{% for r in s.recommendations %}<li>{{ r }}</li>{% endfor %}</ul>
+      <ul>{% for r in s.recommendations %}<li>{{ r | publico }}</li>{% endfor %}</ul>
     </div>
     {% endif %}
   </section>
@@ -108,16 +108,33 @@
 
   <section class="report-section">
     <div class="eyebrow"><span class="num">{{ '%02d' % (sections | length + 2) }}</span>Metodologia</div>
-    <h2>Fontes e <span class="hl">método</span></h2>
+    <h2>Metodologia de <span class="hl">coleta</span></h2>
     <div class="bar"></div>
-    <p>As informações foram coletadas de fontes públicas de inteligência de ameaças, sem acesso a
-      ambientes do cliente e sem interação com agentes maliciosos.</p>
-    <div class="card">
-      <ul class="sources">{% for name, desc in sources %}<li><strong>{{ name }}</strong> <span class="muted">{{ desc }}</span></li>{% endfor %}</ul>
+    <p>As informações deste relatório foram obtidas por meio de inteligência de fontes abertas (OSINT),
+      a partir de bases públicas e comunitárias de inteligência de ameaças acompanhadas continuamente pela
+      equipe da {{ settings.company_name }}. A coleta é inteiramente passiva: não houve acesso aos ambientes,
+      sistemas ou redes de {{ client.name }}, nem qualquer interação com agentes maliciosos, fóruns restritos
+      ou conteúdo de acesso ilícito.</p>
+    <p>Os achados são correlacionados com os ativos informados pelo cliente (domínios e e-mails),
+      consolidados quando a mesma ocorrência é identificada em mais de uma fonte e classificados por
+      gravidade, considerando o potencial de impacto e a confiabilidade da evidência.</p>
+    <div class="grid2">
+      <div class="card">
+        <span class="eyebrow">Escopo da análise</span>
+        <ul class="list plain">{% for item in method_scope %}<li>{{ item }}</li>{% endfor %}</ul>
+      </div>
+      <div class="card hi">
+        <span class="eyebrow">Considerações</span>
+        <ul class="list plain">
+          <li>Correspondências indicadas como "possíveis" devem ser validadas antes de qualquer ação.</li>
+          <li>A ausência de achados não garante a ausência de exposição: as fontes públicas refletem apenas
+            o que foi divulgado ou indexado até a data da varredura.</li>
+          <li>Senhas eventualmente identificadas são apresentadas somente de forma mascarada e não são
+            armazenadas na íntegra.</li>
+          <li>Este documento é confidencial e destinado exclusivamente a {{ client.name.rstrip('.') }}.</li>
+        </ul>
+      </div>
     </div>
-    <p class="muted">Correspondências marcadas como "possível" devem ser validadas antes de qualquer ação.
-      A ausência de achados não garante a ausência de exposição. Senhas aparecem somente mascaradas,
-      como fornecidas pelas fontes; senhas completas não são armazenadas nem reproduzidas neste relatório.</p>
   </section>
 
   <footer class="report-footer">

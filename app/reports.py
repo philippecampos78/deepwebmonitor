@@ -1,5 +1,6 @@
 """Monta os dados do relatório de um cliente."""
 
+import re
 from collections import Counter
 from datetime import timedelta
 
@@ -28,7 +29,7 @@ RECOMMENDATIONS = {
     "codigo_exposto": [
         "Revogar e substituir imediatamente qualquer credencial, token ou chave encontrada.",
         "Pedir a remoção do conteúdo ao dono do repositório ou ao GitHub; apagar o arquivo não remove o histórico.",
-        "Adotar varredura de segredos (ex.: gitleaks) nos repositórios e pipelines do cliente.",
+        "Adotar varredura automática de segredos nos repositórios e pipelines de desenvolvimento.",
     ],
     "ioc": [
         "Verificar se servidores do domínio foram comprometidos (web shells, arquivos alterados, contas novas).",
@@ -61,24 +62,45 @@ RECOMMENDATIONS = {
     ],
 }
 
-SOURCES = [
-    ("Have I Been Pwned", "Catálogo de vazamentos de dados públicos e busca por domínio verificado."),
-    ("XposedOrNot", "Catálogo aberto de vazamentos de dados, consultado por e-mail."),
-    ("LeakCheck", "Base de vazamentos e combolists, consultada por e-mail."),
-    ("ransomware.live", "Monitoramento de sites de vazamento mantidos por grupos de ransomware."),
-    ("Hudson Rock (OSINT)", "Base de computadores infectados por malware do tipo infostealer."),
-    ("RansomLook", "Segunda base de sites de vazamento de ransomware, com outros grupos monitorados."),
-    ("Ahmia", "Buscador de páginas da rede Tor (.onion)."),
-    ("GitHub + gitleaks", "Busca de código público que menciona o domínio e detecção de segredos."),
-    ("abuse.ch (URLhaus e ThreatFox)", "Bases de URLs maliciosas e indicadores de ameaça."),
-    ("AlienVault OTX", "Relatórios de ameaças compartilhados pela comunidade."),
-    ("VirusTotal", "Reputação do domínio em antivírus e listas de bloqueio."),
-    ("Shodan InternetDB + CISA KEV", "Portas abertas e vulnerabilidades, com destaque para as exploradas ativamente."),
-    ("SPF / DKIM / DMARC", "Registros DNS que protegem o domínio contra e-mails falsificados."),
-    ("urlscan.io", "Páginas analisadas publicamente que imitam a marca ou o site do cliente."),
-    ("crt.sh", "Logs públicos de certificados TLS (Certificate Transparency)."),
-    ("dnstwist", "Geração de variações do domínio e verificação de registro no DNS."),
+# Escopo descrito no relatório do cliente: o QUE foi analisado, nunca COM QUAIS ferramentas
+METHOD_SCOPE = [
+    "Vazamentos de dados públicos envolvendo contas e domínios da organização",
+    "Credenciais corporativas capturadas por malware do tipo infostealer",
+    "Publicações em sites de extorsão mantidos por grupos de ransomware",
+    "Menções à organização em fóruns e páginas da dark web",
+    "Credenciais, chaves e dados expostos em repositórios de código público",
+    "Reputação do domínio e presença em bases de indicadores de ameaça",
+    "Serviços e vulnerabilidades expostos à internet",
+    "Domínios, certificados e páginas que imitam a marca (phishing)",
+    "Proteção do domínio contra falsificação de e-mails (SPF, DKIM e DMARC)",
 ]
+
+# Trocas aplicadas aos textos dos achados no relatório do cliente, para não revelar as
+# ferramentas de coleta. A tela interna do site continua mostrando a origem de cada achado.
+_PUBLIC_REWRITES = [
+    (r"\s*Confirmado também por: [^.]*\.", " Confirmado por mais de uma fonte."),
+    (r"\s*\((?:detectado por )?(?:gitleaks|regras internas)\)", ""),
+    (r"\bno URLhaus\b", "em base pública de URLs maliciosas"),
+    (r"\bno ThreatFox\b", "em base pública de indicadores de ameaça"),
+    (r"\bcatálogo KEV da CISA\b", "catálogo público de vulnerabilidades exploradas ativamente"),
+    (r"\bO OTX marca\b", "As bases de reputação marcam"),
+    (r"\bClassificação do urlscan\b", "Classificação em base pública"),
+    (r"\s+no VirusTotal\b", " de reputação"),
+]
+TOOL_NAMES = ["Have I Been Pwned", "HIBP", "XposedOrNot", "LeakCheck", "Hudson Rock", "Cavalier",
+              "ransomware.live", "RansomLook", "Ahmia", "gitleaks", "abuse.ch", "URLhaus", "ThreatFox",
+              "AlienVault", "OTX", "VirusTotal", "Shodan", "InternetDB", "CISA", "KEV", "urlscan",
+              "crt.sh", "dnstwist", "Pwned Passwords"]
+_TOOLS_RE = re.compile(r"\b(?:" + "|".join(re.escape(t) for t in sorted(TOOL_NAMES, key=len, reverse=True)) + r")\b",
+                       re.I)
+
+
+def public_text(text: str) -> str:
+    """Versão do texto para o cliente: sem nomes de ferramentas de coleta."""
+    out = text or ""
+    for pattern, repl in _PUBLIC_REWRITES:
+        out = re.sub(pattern, repl, out, flags=re.I)
+    return _TOOLS_RE.sub("fonte pública", out)
 
 
 def build_report(client: Client, days: int) -> dict:
@@ -125,5 +147,5 @@ def build_report(client: Client, days: int) -> dict:
         "risk": risk,
         "risk_label": SEVERITY_LABELS[risk],
         "sections": sections,
-        "sources": SOURCES,
+        "method_scope": METHOD_SCOPE,
     }
